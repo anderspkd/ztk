@@ -17,6 +17,9 @@ inline void op_add(limb_t[N], const limb_t[N], const limb_t[N]);
 template<size_t N>
 inline void op_sub(limb_t[N], const limb_t[N], const limb_t[N]);
 
+template<size_t N>
+inline void op_mul(limb_t[N], const limb_t[N], const limb_t[N]);
+
 // Z_2^K
 template<size_t K>
 class Z2k {
@@ -84,6 +87,13 @@ public:
 	return r;
     };
 
+    inline friend Z2k<K> operator*(const Z2k<K> &x, const Z2k<K> &y) {
+	Z2k<K> r;
+	op_mul<SizeInLimbs()>(r.limbs, x.limbs, y.limbs);
+	mask_if<NeedsMasking()>(r.limbs[SizeInLimbs()-1], mask);
+	return r;
+    };
+
     bool IsZero() const { return limbs[0] == (limb_t)0; };
     bool IsOne() const  { return limbs[0] == (limb_t)1; };
 
@@ -124,11 +134,6 @@ inline void op_add<1>(limb_t r[1], const limb_t x[1], const limb_t y[1]) {
 }
 
 template<>
-inline void op_sub<1>(limb_t r[1], const limb_t x[1], const limb_t y[1]) {
-    r[0] = x[0] - y[0];
-}
-
-template<>
 inline void op_add<2>(limb_t r[2], const limb_t x[2], const limb_t y[2]) {
     asm ("movq	%3, %1 \n\t"						\
     	 "movq	%2, %0 \n\t"						\
@@ -137,6 +142,16 @@ inline void op_add<2>(limb_t r[2], const limb_t x[2], const limb_t y[2]) {
 	 : "+r" (r[1]), "+r" (r[0])					\
 	 : "r" (x[1]), "r" (x[0]), "r" (y[1]), "r" (y[0]) : "cc"	\
 	);
+}
+
+template<>
+inline void op_sub<1>(limb_t r[1], const limb_t x[1], const limb_t y[1]) {
+    r[0] = x[0] - y[0];
+}
+
+template<>
+inline void op_mul<1>(limb_t r[1], const limb_t x[1], const limb_t y[1]) {
+    r[0] = x[0] * y[0];
 }
 
 } // ztk

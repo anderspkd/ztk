@@ -168,3 +168,19 @@ TEST_CASE("Z2k addition", "[add]") {
     	CHECK(z_.GetLimbs()[1] == t[1]);
     }
 }
+
+TEST_CASE("Z2k multiplication", "[mul]") {
+    SECTION("64") {
+	u64 x, y, z;
+	randomize<u64>(x);
+	randomize<u64>(y);
+
+	z = x * y;
+
+	Z2k<64> x_ {x};
+	Z2k<64> y_ {y};
+	Z2k<64> z_ {x_ * y_};
+
+	CHECK(z_.GetLimbs()[0] == z);
+    }
+}
