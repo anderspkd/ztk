@@ -73,21 +73,21 @@ public:
     };
 
     // arithmetic operators
-    inline friend Z2k<K> operator+(const Z2k<K> &x, const Z2k<K> &y) {
+    friend Z2k<K> operator+(const Z2k<K> &x, const Z2k<K> &y) {
 	Z2k<K> r;
 	op_add<SizeInLimbs()>(r.limbs, x.limbs, y.limbs);
 	mask_if<NeedsMasking()>(r.limbs[SizeInLimbs()-1], mask);
 	return r;
     };
 
-    inline friend Z2k<K> operator-(const Z2k<K> &x, const Z2k<K> &y) {
+    friend Z2k<K> operator-(const Z2k<K> &x, const Z2k<K> &y) {
     	Z2k<K> r;
 	op_sub<SizeInLimbs()>(r.limbs, x.limbs, y.limbs);
 	mask_if<NeedsMasking()>(r.limbs[SizeInLimbs()-1], mask);
 	return r;
     };
 
-    inline friend Z2k<K> operator*(const Z2k<K> &x, const Z2k<K> &y) {
+    friend Z2k<K> operator*(const Z2k<K> &x, const Z2k<K> &y) {
 	Z2k<K> r;
 	op_mul<SizeInLimbs()>(r.limbs, x.limbs, y.limbs);
 	mask_if<NeedsMasking()>(r.limbs[SizeInLimbs()-1], mask);
