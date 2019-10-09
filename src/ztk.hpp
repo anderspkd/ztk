@@ -89,7 +89,6 @@ public:
 
 #ifdef TESTING
 
-    // use for testing
     const limb_t *GetLimbs() const {
 	return limbs;
     };
