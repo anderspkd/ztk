@@ -17,10 +17,10 @@ using std::string;
 
 
 template<typename T>
-static void randomize(T *x) {
+static void randomize(T &x) {
     if (sodium_init() < 0)
 	assert(0);
-    randombytes_buf(x, sizeof(T));
+    randombytes_buf((T*)&x, sizeof(T));
 }
 
 
@@ -57,11 +57,11 @@ TEST_CASE("Z2k construct 0", "[constructor]") {
     }
 }
 
-TEST_CASE("Z2k add", "[add]") {
+TEST_CASE("Z2k addition", "[add]") {
     SECTION("32") {
 	u32 x, y, z;
-	randomize<u32>(&x);
-	randomize<u32>(&y);
+	randomize<u32>(x);
+	randomize<u32>(y);
 	z = x + y;
 
 	Z2k<32> x_ {x};
@@ -75,8 +75,8 @@ TEST_CASE("Z2k add", "[add]") {
 
     SECTION("35") {
 	u64 x, y, z;
-	randomize<u64>(&x);
-	randomize<u64>(&y);
+	randomize<u64>(x);
+	randomize<u64>(y);
 	z = x + y;
 
 	size_t mask = 0x7ffffffff;
@@ -94,8 +94,8 @@ TEST_CASE("Z2k add", "[add]") {
 
     SECTION("64") {
 	u64 x, y, z;
-	randomize<u64>(&x);
-	randomize<u64>(&y);
+	randomize<u64>(x);
+	randomize<u64>(y);
 	z = x + y;
 
 	Z2k<64> x_ {x};
@@ -110,8 +110,8 @@ TEST_CASE("Z2k add", "[add]") {
     SECTION("128") {
     	u64 x[2], y[2], t[2];
 	for (size_t i = 0; i < 2; i++) {
-	    randomize<u64>(&x[i]);
-	    randomize<u64>(&y[i]);
+	    randomize<u64>(x[i]);
+	    randomize<u64>(y[i]);
 	}
 
 	mpn_add_n(t, x, y, 2);
@@ -138,8 +138,8 @@ TEST_CASE("Z2k add", "[add]") {
     SECTION("101") {
     	u64 x[2], y[2], t[2];
 	for (size_t i = 0; i < 2; i++) {
-	    randomize<u64>(&x[i]);
-	    randomize<u64>(&y[i]);
+	    randomize<u64>(x[i]);
+	    randomize<u64>(y[i]);
 	}
 
 	size_t mask = 0x1fffffffff;
