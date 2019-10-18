@@ -6,7 +6,7 @@
 #include <sodium.h>
 #include <gmp.h>
 
-#include "../src/ztk.hpp"
+#include "../ztk.hpp"
 
 
 typedef uint32_t u32;
@@ -26,32 +26,32 @@ static void randomize(T &x) {
 
 TEST_CASE("Z2k construct 0", "[constructor]") {
     SECTION("32") {
-	Z2k<32> x;
+	Z2k<32> x {(int)0};
 	CHECK(x.IsZero());
 	CHECK(x.SizeInLimbs() == 1);
     }
     SECTION("35") {
-	Z2k<35> x;
+	Z2k<35> x {(int)0};
 	CHECK(x.IsZero());
 	CHECK(x.SizeInLimbs() == 1);
     }
     SECTION("64") {
-	Z2k<64> x;
+	Z2k<64> x {(int)0};
 	CHECK(x.IsZero());
 	CHECK(x.SizeInLimbs() == 1);
     }
     SECTION("67") {
-	Z2k<67> x;
+	Z2k<67> x {(int)0};
 	CHECK(x.IsZero());
 	CHECK(x.SizeInLimbs() == 2);
     }
     SECTION("100") {
-	Z2k<100> x;
+	Z2k<100> x {(int)0};
 	CHECK(x.IsZero());
 	CHECK(x.SizeInLimbs() == 2);
     }
     SECTION("128") {
-	Z2k<128> x;
+	Z2k<128> x {(int)0};
 	CHECK(x.IsZero());
 	CHECK(x.SizeInLimbs() == 2);
     }
@@ -183,4 +183,21 @@ TEST_CASE("Z2k multiplication", "[mul]") {
 
 	CHECK(z_.GetLimbs()[0] == z);
     }
+
+    // SECTION("128") {
+    // 	u64 x[2], y[2], z[4];
+    // 	for (size_t i = 0; i < 2; i++) {
+    // 	    randomize<u64>(x[i]);
+    // 	    randomize<u64>(y[i]);
+    // 	}
+
+    // 	mpn_mul_n(z, x, y, 2);
+
+    // 	Z2k<128> x_ {x};
+    // 	Z2k<128> y_ {y};
+    // 	Z2k<128> z_ {x_ * y_};
+
+    // 	CHECK(z_.GetLimbs()[0] == z[0]);
+    // 	CHECK(z_.GetLimbs()[1] == z[1]);
+    // }
 }

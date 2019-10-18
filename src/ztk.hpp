@@ -72,6 +72,16 @@ public:
 	mask_if<NeedsMasking()>(this->limbs[SizeInLimbs()-1], mask);
     };
 
+    Z2k<K> operator=(const Z2k<K> &x) {
+	memcpy(this->limbs, x.limbs, SizeInBytes());
+	return *this;
+    };
+
+    void AssignFromLimbs(const limb_t limbs[SizeInLimbs()]) {
+	memcpy(this->limbs, limbs, SizeInLimbs());
+	mask_if<NeedsMasking()>(this->limbs[SizeInLimbs()-1], mask);
+    }
+
     // arithmetic operators
     friend Z2k<K> operator+(const Z2k<K> &x, const Z2k<K> &y) {
 	Z2k<K> r;
@@ -96,6 +106,9 @@ public:
 
     bool IsZero() const { return limbs[0] == (limb_t)0; };
     bool IsOne() const  { return limbs[0] == (limb_t)1; };
+
+    // template<int L>
+    // friend std::ostream& operator<<(std::ostream &os, const Z2k<L> &x);
 
 #ifdef TESTING
 
@@ -135,13 +148,13 @@ inline void op_add<1>(limb_t r[1], const limb_t x[1], const limb_t y[1]) {
 
 template<>
 inline void op_add<2>(limb_t r[2], const limb_t x[2], const limb_t y[2]) {
-    asm ("movq	%3, %1 \n\t"						\
-    	 "movq	%2, %0 \n\t"						\
-	 "addq	%5, %1 \n\t"						\
-	 "adcq	%4, %0"							\
-	 : "+r" (r[1]), "+r" (r[0])					\
-	 : "r" (x[1]), "r" (x[0]), "r" (y[1]), "r" (y[0]) : "cc"	\
-	);
+    asm ("movq	%3, %1 \n\t"
+    	 "movq	%2, %0 \n\t"
+    	 "addq	%5, %1 \n\t"
+    	 "adcq	%4, %0"
+    	 : "+r" (r[1]), "+r" (r[0])
+    	 : "r" (x[1]), "r" (x[0]), "r" (y[1]), "r" (y[0]) : "cc"
+    	);
 }
 
 template<>
