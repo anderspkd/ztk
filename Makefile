@@ -5,8 +5,8 @@ TEST_LDFLAGS = -lsodium -lgmp
 
 TEST_EXEC = runtest
 
-tests: src/ztk.hpp
-	$(CXX) $(CXXFLAGS) -DTESTING test/tests.cpp -o $(TEST_EXEC) $(TEST_LDFLAGS)
+tests: ztk.hpp
+	$(CXX) $(CXXFLAGS) -O3 -DTESTING test/tests.cpp -o $(TEST_EXEC) $(TEST_LDFLAGS)
 	./$(TEST_EXEC)
 
 clean:
