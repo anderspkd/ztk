@@ -182,6 +182,15 @@ inline void op_inc<1>(limb_t r[1], const limb_t x[1]) {
     r[0] += x[0];
 }
 
+template<>
+inline void op_inc<2>(limb_t r[2], const limb_t x[2]) {
+    asm ("addq %3, %1 \n\t"
+	 "adcq %2, %0 \n\t"
+	 : "+r" (r[1]), "+r" (r[0])
+	 : "r" (x[1]), "r" (x[0]) : "cc"
+	);
+}
+
 // Subtraction code
 
 template<>
