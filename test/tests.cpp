@@ -169,6 +169,58 @@ TEST_CASE("Z2k addition", "[add]") {
     }
 }
 
+TEST_CASE("Z2k subtraction", "[sub]") {
+    SECTION("64") {
+	u64 x, y, z0, z1;
+	randomize<u64>(x);
+	randomize<u64>(y);
+
+	z0 = x - y;
+	z1 = y - x;
+
+	Z2k<64> x_ {x};
+	Z2k<64> y_ {y};
+	Z2k<64> z0_ {x_ - y_};
+	Z2k<64> z1_ {y_ - x_};
+
+	CHECK(z0_.NeedsMasking() == false);
+	CHECK(z1_.NeedsMasking() == false);
+	CHECK(z0_.SizeInLimbs() == 1);
+	CHECK(z1_.SizeInLimbs() == 1);
+	CHECK((u64)z0_.GetLimbs()[0] == z0);
+	CHECK((u64)z1_.GetLimbs()[0] == z1);
+    }
+
+    SECTION("128") {
+	u64 x[2], y[2], z0[2], z1[2];
+	for (size_t i = 0; i < 2; i++) {
+	    randomize<u64>(x[i]);
+	    randomize<u64>(y[i]);
+	}
+
+	mpn_sub_n(z0, x, y, 2);
+	mpn_sub_n(z1, y, x, 2);
+
+	Z2k<128> x_ {(ztk::limb_t *)x};
+	Z2k<128> y_ {(ztk::limb_t *)y};
+
+	CHECK(x_.GetLimbs()[0] == x[0]);
+	CHECK(x_.GetLimbs()[1] == x[1]);
+	CHECK(y_.GetLimbs()[0] == y[0]);
+	CHECK(y_.GetLimbs()[1] == y[1]);
+
+	Z2k<128> z0_ {x_ - y_};
+	Z2k<128> z1_ {y_ - x_};
+
+	CHECK(z0_.GetLimbs()[0] == z0[0]);
+	CHECK(z0_.GetLimbs()[1] == z0[1]);
+    	CHECK(z1_.GetLimbs()[0] == z1[0]);
+    	CHECK(z1_.GetLimbs()[1] == z1[1]);
+
+
+    }
+}
+
 TEST_CASE("Z2k multiplication", "[mul]") {
     SECTION("64") {
 	u64 x, y, z;

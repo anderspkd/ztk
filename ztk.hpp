@@ -163,6 +163,17 @@ inline void op_sub<1>(limb_t r[1], const limb_t x[1], const limb_t y[1]) {
 }
 
 template<>
+inline void op_sub<2>(limb_t r[2], const limb_t x[2], const limb_t y[2]) {
+    asm ("movq %3, %1 \n\t"
+	 "movq %2, %0 \n\t"
+	 "subq %5, %1 \n\t"
+	 "sbbq %4, %0"
+	 : "+r" (r[1]), "+r" (r[0])
+	 : "r" (x[1]), "r" (x[0]), "r" (y[1]), "r" (y[0]) : "cc"
+	);
+}
+
+template<>
 inline void op_mul<1>(limb_t r[1], const limb_t x[1], const limb_t y[1]) {
     r[0] = x[0] * y[0];
 }
