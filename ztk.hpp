@@ -15,7 +15,13 @@ template<size_t N>
 inline void op_add(limb_t[N], const limb_t[N], const limb_t[N]);
 
 template<size_t N>
+inline void op_inc(limb_t[N], const limb_t[N]);
+
+template<size_t N>
 inline void op_sub(limb_t[N], const limb_t[N], const limb_t[N]);
+
+template<size_t N>
+inline void op_dec(limb_t[N], const limb_t[N]);
 
 template<size_t N>
 inline void op_mul(limb_t[N], const limb_t[N], const limb_t[N]);
@@ -90,12 +96,24 @@ public:
 	return r;
     };
 
+    Z2k<K> operator+=(const Z2k<K> &x) {
+	op_inc<SizeInLimbs()>(limbs, x.limbs);
+	mask_if<NeedsMasking()>(limbs[SizeInLimbs()-1], mask);
+	return *this;
+    };
+
     friend Z2k<K> operator-(const Z2k<K> &x, const Z2k<K> &y) {
     	Z2k<K> r;
 	op_sub<SizeInLimbs()>(r.limbs, x.limbs, y.limbs);
 	mask_if<NeedsMasking()>(r.limbs[SizeInLimbs()-1], mask);
 	return r;
     };
+
+    Z2k<K> operator-=(const Z2k<K> &x) {
+	op_dec<SizeInLimbs()>(limbs, x.limbs);
+	mask_if<NeedsMasking()>(limbs[SizeInLimbs()-1], mask);
+	return *this;
+    }
 
     friend Z2k<K> operator*(const Z2k<K> &x, const Z2k<K> &y) {
 	Z2k<K> r;
@@ -141,6 +159,8 @@ inline void mask_if<false>(limb_t &r, const limb_t mask) {
     (void)mask;
 }
 
+// Addition code
+
 template<>
 inline void op_add<1>(limb_t r[1], const limb_t x[1], const limb_t y[1]) {
     r[0] = x[0] + y[0];
@@ -158,6 +178,13 @@ inline void op_add<2>(limb_t r[2], const limb_t x[2], const limb_t y[2]) {
 }
 
 template<>
+inline void op_inc<1>(limb_t r[1], const limb_t x[1]) {
+    r[0] += x[0];
+}
+
+// Subtraction code
+
+template<>
 inline void op_sub<1>(limb_t r[1], const limb_t x[1], const limb_t y[1]) {
     r[0] = x[0] - y[0];
 }
@@ -171,6 +198,11 @@ inline void op_sub<2>(limb_t r[2], const limb_t x[2], const limb_t y[2]) {
 	 : "+r" (r[1]), "+r" (r[0])
 	 : "r" (x[1]), "r" (x[0]), "r" (y[1]), "r" (y[0]) : "cc"
 	);
+}
+
+template<>
+inline void op_dec<1>(limb_t r[1], const limb_t x[1]) {
+    r[0] -= x[0];
 }
 
 template<>

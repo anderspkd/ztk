@@ -169,6 +169,59 @@ TEST_CASE("Z2k addition", "[add]") {
     }
 }
 
+TEST_CASE("Z2k increment", "[inc]") {
+    SECTION("64") {
+	u64 x, y;
+	randomize<u64>(x);
+	randomize<u64>(y);
+
+	Z2k<64> x_ {x};
+	Z2k<64> y_ {y};
+
+	y += x;
+
+	y_ += x_;
+
+	CHECK(y_.GetLimbs()[0] == y);
+	CHECK(x_.GetLimbs()[0] == x);
+    }
+}
+
+TEST_CASE("Z2k decrement", "[dec]") {
+    SECTION("64 xy") {
+	u64 x, y;
+	randomize<u64>(x);
+	randomize<u64>(y);
+
+	Z2k<64> x_ {x};
+	Z2k<64> y_ {y};
+
+	y -= x;
+
+	y_ -= x_;
+
+	CHECK(y_.GetLimbs()[0] == y);
+	CHECK(x_.GetLimbs()[0] == x);
+
+    }
+    SECTION("64 yx") {
+	u64 x, y;
+	randomize<u64>(x);
+	randomize<u64>(y);
+
+	Z2k<64> x_ {x};
+	Z2k<64> y_ {y};
+
+	x -= y;
+
+	x_ -= y_;
+
+	CHECK(y_.GetLimbs()[0] == y);
+	CHECK(x_.GetLimbs()[0] == x);
+
+    }
+}
+
 TEST_CASE("Z2k subtraction", "[sub]") {
     SECTION("64") {
 	u64 x, y, z0, z1;
