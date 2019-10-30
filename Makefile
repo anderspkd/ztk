@@ -6,6 +6,10 @@ TEST_LDFLAGS = -lsodium -lgmp
 TEST_EXEC  = runtest
 BENCH_EXEC = benchmark
 
+ifeq ($(GCC_UINT128), 1)
+	CXXFLAGS += -DZTK_GCC_UINT128
+endif
+
 tests: ztk.hpp
 	$(CXX) $(CXXFLAGS) -O3 -DTESTING test/tests.cpp -o $(TEST_EXEC) $(TEST_LDFLAGS)
 	./$(TEST_EXEC)

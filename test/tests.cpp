@@ -289,20 +289,20 @@ TEST_CASE("Z2k multiplication", "[mul]") {
 	CHECK(z_.GetLimbs()[0] == z);
     }
 
-    // SECTION("128") {
-    // 	u64 x[2], y[2], z[4];
-    // 	for (size_t i = 0; i < 2; i++) {
-    // 	    randomize<u64>(x[i]);
-    // 	    randomize<u64>(y[i]);
-    // 	}
+    SECTION("128") {
+    	u64 x[2], y[2], z[4];
+    	for (size_t i = 0; i < 2; i++) {
+    	    randomize<u64>(x[i]);
+    	    randomize<u64>(y[i]);
+    	}
 
-    // 	mpn_mul_n(z, x, y, 2);
+    	mpn_mul_n(z, x, y, 2);
 
-    // 	Z2k<128> x_ {x};
-    // 	Z2k<128> y_ {y};
-    // 	Z2k<128> z_ {x_ * y_};
+    	Z2k<128> x_ {x};
+    	Z2k<128> y_ {y};
+    	Z2k<128> z_ {x_ * y_};
 
-    // 	CHECK(z_.GetLimbs()[0] == z[0]);
-    // 	CHECK(z_.GetLimbs()[1] == z[1]);
-    // }
+    	CHECK(z_.GetLimbs()[0] == z[0]);
+    	CHECK(z_.GetLimbs()[1] == z[1]);
+    }
 }
