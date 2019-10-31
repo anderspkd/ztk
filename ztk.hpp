@@ -4,12 +4,6 @@
 #include <cstdint>
 #include <string>
 
-#ifdef ZTK_GCC_UINT128
-#ifndef __SIZEOF_INT128__
-#error "__uint128 not defined"
-#endif
-#endif
-
 namespace ztk {
 
 typedef uint64_t limb_t;
