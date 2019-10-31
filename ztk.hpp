@@ -1,3 +1,15 @@
+// Copyright Anders Dalskov, 2019
+//
+// Credit of multiplication asm goes to Diego Aranha.
+//
+// This header implements the ring Z/Z_2^k for k <= 128. Supports addition,
+// subtraction, multiplication and division (provided denominator is odd).
+//
+// The header reacts to one flags:
+//
+// If ZTK_GCC_UINT128 is defined then arithmetic operations (except division)
+// for elements with k > 64 will use the GCC __uint128 extension.
+
 #ifndef _ZTK_HPP
 #define _ZTK_HPP
 
@@ -6,35 +18,29 @@
 
 namespace ztk {
 
+// An element is represented as an array of limb_t types.
 typedef uint64_t limb_t;
 
-template<bool B>
-inline void mask_if(limb_t&, const limb_t);
+template<bool B> inline void mask_if(limb_t&, const limb_t);
+template<size_t N> inline void op_add(limb_t[N], const limb_t[N], const limb_t[N]);
+template<size_t N> inline void op_inc(limb_t[N], const limb_t[N]);
+template<size_t N> inline void op_sub(limb_t[N], const limb_t[N], const limb_t[N]);
+template<size_t N> inline void op_dec(limb_t[N], const limb_t[N]);
+template<size_t N> inline void op_mul(limb_t[N], const limb_t[N], const limb_t[N]);
 
-template<size_t N>
-inline void op_add(limb_t[N], const limb_t[N], const limb_t[N]);
-
-template<size_t N>
-inline void op_inc(limb_t[N], const limb_t[N]);
-
-template<size_t N>
-inline void op_sub(limb_t[N], const limb_t[N], const limb_t[N]);
-
-template<size_t N>
-inline void op_dec(limb_t[N], const limb_t[N]);
-
-template<size_t N>
-inline void op_mul(limb_t[N], const limb_t[N], const limb_t[N]);
-
-// Z_2^K
+// Z/Z_2^k
 template<size_t K>
 class Z2k {
 public:
 
-    static const Z2k<K> Zero;
-    static constexpr Z2k<K> One {1};
-    static constexpr Z2k<K> Two {2};
-    static constexpr Z2k<K> Three {3};
+    template<size_t L>
+    friend class Z2k;
+
+    // Useful constants
+    static constexpr Z2k<K> Zero  = Z2k<K>(0, Z2k<K>::mask);
+    static constexpr Z2k<K> One   = Z2k<K>(1, Z2k<K>::mask);
+    static constexpr Z2k<K> Two   = Z2k<K>(2, Z2k<K>::mask);
+    static constexpr Z2k<K> Three = Z2k<K>(3, Z2k<K>::mask);
 
     // Size of an element in bits.
     static constexpr size_t SizeInBits() {
@@ -54,46 +60,61 @@ public:
     // True if the result of an arithmetic operation needs to be masked
     static constexpr bool NeedsMasking() {
 	return mask + 1;
-    }
+    };
 
-    // Constructor. Default to 0
+    // Constructors.
+
+    // Construct the value 0
     constexpr Z2k() {};
 
-    // .. From another Z2k element
-    Z2k(const Z2k<K> &other) : Z2k{other.limbs} {};
+    constexpr Z2k(const limb_t x, const limb_t mask) {
+	limbs[0] = x & mask;
+    };
 
-    // .. From another element with different modulus
-    template<size_t L>
-    Z2k(const Z2k<L> &other);
-
-    // .. From a buffer
-    Z2k(const unsigned char *buf) : Z2k{(const limb_t *)buf} {};
-
-    // .. From a string
-    Z2k(const std::string &str, const size_t base = 10);
-
-    // .. From a limb (i.e., uint64_t)
+    // Construct from a single limb.
     Z2k(const limb_t x) {
 	limbs[0] = x;
 	mask_if<NeedsMasking()>(limbs[0], mask);
     };
 
-    // .. From a set of limbs
+    // Construct frin a set of limbs.
     Z2k(const limb_t limbs[SizeInLimbs()]) {
 	memcpy(this->limbs, limbs, SizeInBytes());
 	mask_if<NeedsMasking()>(this->limbs[SizeInLimbs()-1], mask);
     };
 
+    // Copy constructor
+    Z2k(const Z2k<K> &other)
+	: Z2k{other.limbs} {};
+
+    // Copy constructor with a different modulus. When L <= K then the new
+    // element is equivalent with the old. In the other situation, the new
+    // element corresponds to the old one with the top K - L bits set to 0.
+    template<size_t L>
+    Z2k(const Z2k<L> &other) {
+	const auto nbytes = L > K ? SizeInBytes() : other.SizeInBytes();
+	memcpy(this->limbs, other.limbs, nbytes);
+	mask_if<NeedsMasking()>(limbs[SizeInLimbs()-1], mask);
+    };
+
+    // Construct a new element from a raw data. buf is assumed to point to
+    // SizeInBytes bytes.
+    Z2k(const unsigned char *buf)
+	: Z2k{(const limb_t *)buf} {};
+
+    // Construct from a string representation in a particular base
+    // TODO(implement me)
+    Z2k(const std::string &str, const size_t base = 10);
+
+    // Operators
+
+    // Assignment.
     Z2k<K> operator=(const Z2k<K> &x) {
 	memcpy(this->limbs, x.limbs, SizeInBytes());
 	return *this;
     };
 
-    void Pack(unsigned char *buf) const {
-	memcpy(buf, this->limbs, SizeInBytes());
-    };
-
-    // arithmetic operators
+    // Addition
     friend Z2k<K> operator+(const Z2k<K> &x, const Z2k<K> &y) {
 	Z2k<K> r;
 	op_add<SizeInLimbs()>(r.limbs, x.limbs, y.limbs);
@@ -101,12 +122,14 @@ public:
 	return r;
     };
 
+    // Increment
     Z2k<K> operator+=(const Z2k<K> &x) {
 	op_inc<SizeInLimbs()>(limbs, x.limbs);
 	mask_if<NeedsMasking()>(limbs[SizeInLimbs()-1], mask);
 	return *this;
     };
 
+    // Subtraction
     friend Z2k<K> operator-(const Z2k<K> &x, const Z2k<K> &y) {
     	Z2k<K> r;
 	op_sub<SizeInLimbs()>(r.limbs, x.limbs, y.limbs);
@@ -114,12 +137,14 @@ public:
 	return r;
     };
 
+    // Decrement
     Z2k<K> operator-=(const Z2k<K> &x) {
 	op_dec<SizeInLimbs()>(limbs, x.limbs);
 	mask_if<NeedsMasking()>(limbs[SizeInLimbs()-1], mask);
 	return *this;
     }
 
+    // Multiplication
     friend Z2k<K> operator*(const Z2k<K> &x, const Z2k<K> &y) {
 	Z2k<K> r;
 	op_mul<SizeInLimbs()>(r.limbs, x.limbs, y.limbs);
@@ -127,35 +152,37 @@ public:
 	return r;
     };
 
+    // Equality test
     bool operator==(const Z2k<K> &x) const {
-	bool b = true;
+	limb_t m = 0;
 	for (size_t i = 0; i < SizeInLimbs(); i++) {
-	    b &= limbs[i] == x.limbs[i];
+	    m |= limbs[i] ^ x.limbs[i];
 	}
-	return b;
+	return m == 0;
     };
 
+    // Inequality test
     bool operator!=(const Z2k<K> &x) const {
 	return !(*this == x);
     };
 
+    // Parity (odd)
     inline bool IsOdd() const {
 	return (bool)(limbs[0] & 1);
     };
 
+    // Parity (even)
     inline bool IsEven() const {
 	return !IsOdd();
     };
 
-    inline bool IsZero() const {
-	return *this == Z2k<K>::Zero;
-    };
-
+    // Check if element is invertible
     inline bool IsInvertible() const {
 	// IsOdd() == true implies non-zero.
 	return IsOdd();
     }
 
+    // Compute inverse of element. Fails if element is not invertible.
     Z2k<K> Invert() const {
 	assert (IsInvertible());
 
@@ -178,12 +205,25 @@ public:
 	return z;
     };
 
+    // Division
     friend Z2k<K> operator/(const Z2k<K> &x, const Z2k<K> &y) {
     	return x * y.Invert();
     };
 
-    // template<int L>
-    // friend std::ostream& operator<<(std::ostream &os, const Z2k<L> &x);
+    // Misc functionality
+
+    // Serialization. buf is assumed to point to at least SizeInBytes() bytes
+    // memory.
+    void Pack(unsigned char *buf) const {
+	memcpy(buf, this->limbs, SizeInBytes());
+    };
+
+    // To string
+    std::string ToString() const;
+
+    // Priting
+    template<int L>
+    friend std::ostream& operator<<(std::ostream &os, const Z2k<L> &x);
 
 #ifdef TESTING
 
@@ -220,8 +260,6 @@ inline void mask_if<false>(limb_t &r, const limb_t mask) {
     (void)r;
     (void)mask;
 }
-
-// Addition code
 
 template<>
 inline void op_add<1>(limb_t r[1], const limb_t x[1], const limb_t y[1]) {
@@ -260,8 +298,6 @@ inline void op_inc<2>(limb_t r[2], const limb_t x[2]) {
 	 : "r" (x[1]), "r" (x[0]) : "cc"
 	);
 }
-
-// Subtraction code
 
 template<>
 inline void op_sub<1>(limb_t r[1], const limb_t x[1], const limb_t y[1]) {
@@ -319,6 +355,21 @@ inline void op_mul<2>(limb_t r[2], const limb_t x[2], const limb_t y[2]) {
 	 : "cc", "%r8", "%r9", "%r10"
 	);
 #endif
+}
+
+template<size_t K>
+std::string Z2k<K>::ToString() const {
+    std::string s = "{";
+    for (size_t i = 0; i < SizeInLimbs()-1; i++)
+	s += std::to_string(limbs[i]) + ", ";
+    s += std::to_string(limbs[SizeInLimbs()-1]) + "}";
+    return s;
+}
+
+template<size_t K>
+std::ostream &operator<<(std::ostream &os, const Z2k<K> &x) {
+    os << x.ToString();
+    return os;
 }
 
 } // ztk

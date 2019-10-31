@@ -6,6 +6,9 @@
 #include <sodium.h>
 #include <gmp.h>
 
+#include <iostream>
+#include <sstream>
+
 #include "../ztk.hpp"
 
 
@@ -17,292 +20,115 @@ using std::string;
 
 
 template<typename T>
-static void randomize(T &x) {
+void randomize(T &x) {
     if (sodium_init() < 0)
 	assert(0);
     randombytes_buf((T*)&x, sizeof(T));
 }
 
-
-TEST_CASE("Z2k construct 0", "[constructor]") {
-    SECTION("32") {
-	Z2k<32> x {(int)0};
-	CHECK(x.IsZero());
-	CHECK(x.SizeInLimbs() == 1);
+template<size_t K>
+Z2k<K> get_rand() {
+    auto size = Z2k<K>::SizeInLimbs();
+    ztk::limb_t e[size];
+    for (size_t i = 0; i < size; i++) {
+	randomize<ztk::limb_t>(e[i]);
     }
-    SECTION("35") {
-	Z2k<35> x {(int)0};
-	CHECK(x.IsZero());
-	CHECK(x.SizeInLimbs() == 1);
-    }
-    SECTION("64") {
-	Z2k<64> x {(int)0};
-	CHECK(x.IsZero());
-	CHECK(x.SizeInLimbs() == 1);
-    }
-    SECTION("67") {
-	Z2k<67> x {(int)0};
-	CHECK(x.IsZero());
-	CHECK(x.SizeInLimbs() == 2);
-    }
-    SECTION("100") {
-	Z2k<100> x {(int)0};
-	CHECK(x.IsZero());
-	CHECK(x.SizeInLimbs() == 2);
-    }
-    SECTION("128") {
-	Z2k<128> x {(int)0};
-	CHECK(x.IsZero());
-	CHECK(x.SizeInLimbs() == 2);
-    }
+    return Z2k<K>{e};
 }
 
-TEST_CASE("Z2k addition", "[add]") {
-    SECTION("32") {
-	u32 x, y, z;
-	randomize<u32>(x);
-	randomize<u32>(y);
-	z = x + y;
+TEST_CASE("parameters") {
+    Z2k<64> z64;
+    Z2k<62> z62;
+    Z2k<66> z66;
+    Z2k<128> z128;
 
-	Z2k<32> x_ {x};
-	Z2k<32> y_ {y};
-	Z2k<32> z_ {x_ + y_};
+    // All are 0
+    REQUIRE(z64 == Z2k<64>::Zero);
+    REQUIRE(z62 == Z2k<62>::Zero);
+    REQUIRE(z66 == Z2k<66>::Zero);
+    REQUIRE(z128 == Z2k<128>::Zero);
 
-	CHECK(z_.NeedsMasking() == true);
-	CHECK(z_.SizeInLimbs() == 1);
-	CHECK((u32)z_.GetLimbs()[0] == z);
+    // check bit/byte/limb sizes
+    REQUIRE(z64.SizeInBits() == 64);
+    REQUIRE(z62.SizeInBits() == 62);
+    REQUIRE(z66.SizeInBits() == 66);
+    REQUIRE(z128.SizeInBits() == 128);
+
+    REQUIRE(z64.SizeInBytes() == 8);
+    REQUIRE(z62.SizeInBytes() == 8);
+    REQUIRE(z66.SizeInBytes() == 9);
+    REQUIRE(z128.SizeInBytes() == 16);
+
+    REQUIRE(z64.SizeInLimbs() == 1);
+    REQUIRE(z62.SizeInLimbs() == 1);
+    REQUIRE(z66.SizeInLimbs() == 2);
+    REQUIRE(z128.SizeInLimbs() == 2);
+
+    // check masking
+    REQUIRE(z64.NeedsMasking() == false);
+    REQUIRE(z62.NeedsMasking() == true);
+    REQUIRE(z66.NeedsMasking() == true);
+    REQUIRE(z128.NeedsMasking() == false);
+}
+
+TEST_CASE("equality") {
+    Z2k<64> x0 {12345};
+    Z2k<64> x1 {12345};
+    Z2k<64> x2 {123};
+
+    REQUIRE(x0 == x1);
+    REQUIRE(x0 != x2);
+}
+
+TEST_CASE("constructors") {
+    // 0 constructor tested above
+
+    // test with explicit mask
+    SECTION("explicit mask") {
+	// Even if the modulus allows for a larger value, the mask argument lets
+	// us restrict the element arbitrarily.
+	Z2k<64> x {(ztk::limb_t)255, (ztk::limb_t)0x0F};
+	Z2k<64> t {(ztk::limb_t)15};
+	REQUIRE(x == t);
     }
 
-    SECTION("35") {
-	u64 x, y, z;
-	randomize<u64>(x);
-	randomize<u64>(y);
-	z = x + y;
-
-	size_t mask = 0x7ffffffff;
-
-	Z2k<35> x_ {x & mask};
-	Z2k<35> y_ {y & mask};
-	Z2k<35> z_ {x_ + y_};
-
-	z &= mask;
-
-	CHECK(z_.NeedsMasking() == true);
-	CHECK(z_.SizeInLimbs() == 1);
-	CHECK((u64)z_.GetLimbs()[0] == z);
+    SECTION("from limb_t") {
+	Z2k<64> x64 {(ztk::limb_t)255};
+	REQUIRE(x64.GetLimbs()[0] == 255);
+	Z2k<8> x8 {(ztk::limb_t)256};
+	REQUIRE(x8.GetLimbs()[0] == 0);
     }
 
-    SECTION("64") {
-	u64 x, y, z;
-	randomize<u64>(x);
-	randomize<u64>(y);
-	z = x + y;
-
-	Z2k<64> x_ {x};
-	Z2k<64> y_ {y};
-	Z2k<64> z_ {x_ + y_};
-
-	CHECK(z_.NeedsMasking() == false);
-	CHECK(z_.SizeInLimbs() == 1);
-	CHECK((u64)z_.GetLimbs()[0] == z);
+    SECTION("from limb_t[]") {
+	ztk::limb_t x[2] = {1234, 555};
+	Z2k<128> y {x};
+	REQUIRE(y.GetLimbs()[0] == 1234);
+	REQUIRE(y.GetLimbs()[1] == 555);
     }
 
-    SECTION("128") {
-    	u64 x[2], y[2], t[2];
-	for (size_t i = 0; i < 2; i++) {
-	    randomize<u64>(x[i]);
-	    randomize<u64>(y[i]);
+    SECTION("copy") {
+	Z2k<64> x {555};
+	Z2k<64> y {x};
+	REQUIRE(y.GetLimbs()[0] == 555);
+	REQUIRE(x == y);
+
+	Z2k<8>  w {y};
+	REQUIRE(w.GetLimbs()[0] == (555 & 255));
+
+	// for a larger modulus, the value is always correct.
+	for (size_t i = 0; i < 100; i++) {
+	    Z2k<100> z = get_rand<64>();
+	    Z2k<128> zz {z};
+	    REQUIRE(z.GetLimbs()[0] == zz.GetLimbs()[0]);
+	    REQUIRE(z.GetLimbs()[1] == zz.GetLimbs()[1]);
 	}
-
-	mpn_add_n(t, x, y, 2);
-
-    	Z2k<128> x_ {(ztk::limb_t *)x};
-    	Z2k<128> y_ {(ztk::limb_t *)y};
-
-	CHECK(x_.GetLimbs()[0] == x[0]);
-	CHECK(x_.GetLimbs()[1] == x[1]);
-	CHECK(y_.GetLimbs()[0] == y[0]);
-	CHECK(y_.GetLimbs()[1] == y[1]);
-
-    	Z2k<128> z_ {x_ + y_};
-	Z2k<128> t_ {t};
-
-    	CHECK(z_.NeedsMasking() == false);
-    	CHECK(z_.SizeInLimbs() == 2);
-	CHECK(t_.GetLimbs()[0] == t[0]);
-	CHECK(t_.GetLimbs()[1] == t[1]);
-    	CHECK(z_.GetLimbs()[0] == t[0]);
-    	CHECK(z_.GetLimbs()[1] == t[1]);
-    }
-
-    SECTION("101") {
-    	u64 x[2], y[2], t[2];
-	for (size_t i = 0; i < 2; i++) {
-	    randomize<u64>(x[i]);
-	    randomize<u64>(y[i]);
-	}
-
-	size_t mask = 0x1fffffffff;
-
-	mpn_add_n(t, x, y, 2);
-
-    	Z2k<101> x_ {(ztk::limb_t *)x};
-    	Z2k<101> y_ {(ztk::limb_t *)y};
-
-	CHECK(x_.GetLimbs()[0] == x[0]);
-	CHECK(x_.GetLimbs()[1] == (x[1] & mask));
-	CHECK(y_.GetLimbs()[0] == y[0]);
-	CHECK(y_.GetLimbs()[1] == (y[1] & mask));
-
-    	Z2k<101> z_ {x_ + y_};
-
-	t[1] &= mask;
-
-	Z2k<101> t_ {t};
-
-    	CHECK(z_.NeedsMasking() == true);
-    	CHECK(z_.SizeInLimbs() == 2);
-	CHECK(t_.GetLimbs()[0] == t[0]);
-	CHECK(t_.GetLimbs()[1] == t[1]);
-    	CHECK(z_.GetLimbs()[0] == t[0]);
-    	CHECK(z_.GetLimbs()[1] == t[1]);
     }
 }
 
-TEST_CASE("Z2k increment", "[inc]") {
-    SECTION("64") {
-	u64 x, y;
-	randomize<u64>(x);
-	randomize<u64>(y);
-
-	Z2k<64> x_ {x};
-	Z2k<64> y_ {y};
-
-	y += x;
-
-	y_ += x_;
-
-	CHECK(y_.GetLimbs()[0] == y);
-	CHECK(x_.GetLimbs()[0] == x);
-    }
-}
-
-TEST_CASE("Z2k decrement", "[dec]") {
-    SECTION("64 xy") {
-	u64 x, y;
-	randomize<u64>(x);
-	randomize<u64>(y);
-
-	Z2k<64> x_ {x};
-	Z2k<64> y_ {y};
-
-	y -= x;
-
-	y_ -= x_;
-
-	CHECK(y_.GetLimbs()[0] == y);
-	CHECK(x_.GetLimbs()[0] == x);
-
-    }
-    SECTION("64 yx") {
-	u64 x, y;
-	randomize<u64>(x);
-	randomize<u64>(y);
-
-	Z2k<64> x_ {x};
-	Z2k<64> y_ {y};
-
-	x -= y;
-
-	x_ -= y_;
-
-	CHECK(y_.GetLimbs()[0] == y);
-	CHECK(x_.GetLimbs()[0] == x);
-
-    }
-}
-
-TEST_CASE("Z2k subtraction", "[sub]") {
-    SECTION("64") {
-	u64 x, y, z0, z1;
-	randomize<u64>(x);
-	randomize<u64>(y);
-
-	z0 = x - y;
-	z1 = y - x;
-
-	Z2k<64> x_ {x};
-	Z2k<64> y_ {y};
-	Z2k<64> z0_ {x_ - y_};
-	Z2k<64> z1_ {y_ - x_};
-
-	CHECK(z0_.NeedsMasking() == false);
-	CHECK(z1_.NeedsMasking() == false);
-	CHECK(z0_.SizeInLimbs() == 1);
-	CHECK(z1_.SizeInLimbs() == 1);
-	CHECK((u64)z0_.GetLimbs()[0] == z0);
-	CHECK((u64)z1_.GetLimbs()[0] == z1);
-    }
-
-    SECTION("128") {
-	u64 x[2], y[2], z0[2], z1[2];
-	for (size_t i = 0; i < 2; i++) {
-	    randomize<u64>(x[i]);
-	    randomize<u64>(y[i]);
-	}
-
-	mpn_sub_n(z0, x, y, 2);
-	mpn_sub_n(z1, y, x, 2);
-
-	Z2k<128> x_ {(ztk::limb_t *)x};
-	Z2k<128> y_ {(ztk::limb_t *)y};
-
-	CHECK(x_.GetLimbs()[0] == x[0]);
-	CHECK(x_.GetLimbs()[1] == x[1]);
-	CHECK(y_.GetLimbs()[0] == y[0]);
-	CHECK(y_.GetLimbs()[1] == y[1]);
-
-	Z2k<128> z0_ {x_ - y_};
-	Z2k<128> z1_ {y_ - x_};
-
-	CHECK(z0_.GetLimbs()[0] == z0[0]);
-	CHECK(z0_.GetLimbs()[1] == z0[1]);
-    	CHECK(z1_.GetLimbs()[0] == z1[0]);
-    	CHECK(z1_.GetLimbs()[1] == z1[1]);
-
-
-    }
-}
-
-TEST_CASE("Z2k multiplication", "[mul]") {
-    SECTION("64") {
-	u64 x, y, z;
-	randomize<u64>(x);
-	randomize<u64>(y);
-
-	z = x * y;
-
-	Z2k<64> x_ {x};
-	Z2k<64> y_ {y};
-	Z2k<64> z_ {x_ * y_};
-
-	CHECK(z_.GetLimbs()[0] == z);
-    }
-
-    SECTION("128") {
-    	u64 x[2], y[2], z[4];
-    	for (size_t i = 0; i < 2; i++) {
-    	    randomize<u64>(x[i]);
-    	    randomize<u64>(y[i]);
-    	}
-
-    	mpn_mul_n(z, x, y, 2);
-
-    	Z2k<128> x_ {x};
-    	Z2k<128> y_ {y};
-    	Z2k<128> z_ {x_ * y_};
-
-    	CHECK(z_.GetLimbs()[0] == z[0]);
-    	CHECK(z_.GetLimbs()[1] == z[1]);
-    }
+TEST_CASE("printing") {
+    Z2k<8> x {123};
+    std::string t = "{123}";
+    std::stringstream ss;
+    ss << x;
+    REQUIRE(t == ss.str());
 }
