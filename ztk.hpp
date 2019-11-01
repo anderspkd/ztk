@@ -21,6 +21,11 @@ namespace ztk {
 // An element is represented as an array of limb_t types.
 typedef uint64_t limb_t;
 
+#ifdef ZTK_GCC_UINT128
+#define LOAD_U128(r, x) do { (r) = ((__uint128_t)((x)[1]) << 64) | (x)[0]; } while (0)
+#define STORE_U128(r, x) do { (r)[0] = (limb_t)(x); (r)[1] = (limb_t)((x) >> 64); } while (0)
+#endif
+
 template<bool B> inline void mask_if(limb_t&, const limb_t);
 template<size_t N> inline void op_add(limb_t[N], const limb_t[N], const limb_t[N]);
 template<size_t N> inline void op_inc(limb_t[N], const limb_t[N]);
@@ -117,7 +122,7 @@ public:
     // Operators
 
     // Assignment.
-    Z2k<K> operator=(const Z2k<K> &x) {
+    Z2k<K>& operator=(const Z2k<K> &x) {
 	memcpy(this->limbs, x.limbs, SizeInBytes());
 	return *this;
     };
@@ -276,11 +281,11 @@ inline void op_add<1>(limb_t r[1], const limb_t x[1], const limb_t y[1]) {
 template<>
 inline void op_add<2>(limb_t r[2], const limb_t x[2], const limb_t y[2]) {
 #ifdef ZTK_GCC_UINT128
-    __uint128_t _x = ((__uint128_t)(x[1]) << 64) | x[0];
-    __uint128_t _y = ((__uint128_t)(y[1]) << 64) | y[0];
-    auto _r = _x + _y;
-    r[0] = (limb_t)_r;
-    r[1] = (limb_t)(_r >> 64);
+    __uint128_t _x, _r;
+    LOAD_U128(_x, x);
+    LOAD_U128(_r, y);
+    _r += _x;
+    STORE_U128(r, _r);
 #else
     asm ("movq	%3, %1 \n\t"
     	 "movq	%2, %0 \n\t"
@@ -299,11 +304,19 @@ inline void op_inc<1>(limb_t r[1], const limb_t x[1]) {
 
 template<>
 inline void op_inc<2>(limb_t r[2], const limb_t x[2]) {
+#ifdef ZTK_GCC_UINT128
+    __uint128_t _x, _r;
+    LOAD_U128(_x, x);
+    LOAD_U128(_r, r);
+    _r += _x;
+    STORE_U128(r, _r);
+#else
     asm ("addq %3, %1 \n\t"
 	 "adcq %2, %0 \n\t"
 	 : "+r" (r[1]), "+r" (r[0])
 	 : "r" (x[1]), "r" (x[0]) : "cc"
 	);
+#endif
 }
 
 template<>
@@ -314,11 +327,11 @@ inline void op_sub<1>(limb_t r[1], const limb_t x[1], const limb_t y[1]) {
 template<>
 inline void op_sub<2>(limb_t r[2], const limb_t x[2], const limb_t y[2]) {
 #ifdef ZTK_GCC_UINT128
-    __uint128_t _x = ((__uint128_t)(x[1]) << 64) | x[0];
-    __uint128_t _y = ((__uint128_t)(y[1]) << 64) | y[0];
-    auto _r = _x - _y;
-    r[0] = (limb_t)_r;
-    r[1] = (limb_t)(_r >> 64);
+    __uint128_t _x, _r;
+    LOAD_U128(_x, x);
+    LOAD_U128(_r, y);
+    _r -= _x;
+    STORE_U128(r, _r);
 #else
     asm ("movq %3, %1 \n\t"
 	 "movq %2, %0 \n\t"
@@ -343,11 +356,11 @@ inline void op_mul<1>(limb_t r[1], const limb_t x[1], const limb_t y[1]) {
 template<>
 inline void op_mul<2>(limb_t r[2], const limb_t x[2], const limb_t y[2]) {
 #ifdef ZTK_GCC_UINT128
-    __uint128_t _x = ((__uint128_t)(x[1]) << 64) | x[0];
-    __uint128_t _y = ((__uint128_t)(y[1]) << 64) | y[0];
-    auto _r = _x * _y;
-    r[0] = (limb_t)_r;
-    r[1] = (limb_t)(_r >> 64);
+    __uint128_t _x, _r;
+    LOAD_U128(_x, x);
+    LOAD_U128(_r, y);
+    _r *= _x;
+    STORE_U128(r, _r);
 #else
     asm ("mulx  %5, %1, %%r8     \n\t"
          "mulx  %4, %%r9, %%r10  \n\t"

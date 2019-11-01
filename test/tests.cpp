@@ -153,3 +153,35 @@ TEST_CASE("addition") {
 	REQUIRE(z.GetLimbs()[0] == z_);
     }
 }
+
+TEST_CASE("increment") {
+    SECTION("64") {
+	Z2k<64> x = get_rand<64>();
+	Z2k<64> y = get_rand<64>();
+	uint64_t x_ = (uint64_t)x.GetLimbs()[0];
+	uint64_t y_ = (uint64_t)y.GetLimbs()[0];
+	x += y;
+	x_ += y_;
+
+	REQUIRE(x.GetLimbs()[0] == x_);
+	REQUIRE(y.GetLimbs()[0] == y_);
+    }
+
+    SECTION("128") {
+	Z2k<128> x = get_rand<128>();
+	Z2k<128> y = get_rand<128>();
+
+	uint64_t y0 = y.GetLimbs()[0];
+	uint64_t y1 = y.GetLimbs()[1];
+
+	uint64_t t[2];
+	mpn_add_n(t, x.GetLimbs(), y.GetLimbs(), 2);
+
+	x += y;
+
+	REQUIRE(x.GetLimbs()[0] == t[0]);
+	REQUIRE(x.GetLimbs()[1] == t[1]);
+	REQUIRE(y0 == y.GetLimbs()[0]);
+	REQUIRE(y1 == y.GetLimbs()[1]);
+    }
+}
