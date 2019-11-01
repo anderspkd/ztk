@@ -12,12 +12,8 @@
 #include "../ztk.hpp"
 
 
-typedef uint32_t u32;
-typedef uint64_t u64;
-
 using ztk::Z2k;
 using std::string;
-
 
 template<typename T>
 void randomize(T &x) {
@@ -131,4 +127,28 @@ TEST_CASE("printing") {
     std::stringstream ss;
     ss << x;
     REQUIRE(t == ss.str());
+}
+
+TEST_CASE("addition") {
+    SECTION("32") {
+	Z2k<32> x = get_rand<32>();
+	Z2k<32> y = get_rand<32>();
+	auto z = x + y;
+	uint32_t x_ = (uint32_t)x.GetLimbs()[0];
+	uint32_t y_ = (uint32_t)y.GetLimbs()[0];
+	auto z_ = x_ + y_;
+
+	REQUIRE(z.GetLimbs()[0] == z_);
+    }
+
+    SECTION("64") {
+	Z2k<64> x = get_rand<64>();
+	Z2k<64> y = get_rand<64>();
+	auto z = x + y;
+	uint64_t x_ = (uint64_t)x.GetLimbs()[0];
+	uint64_t y_ = (uint64_t)y.GetLimbs()[0];
+	auto z_ = x_ + y_;
+
+	REQUIRE(z.GetLimbs()[0] == z_);
+    }
 }
