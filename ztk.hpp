@@ -5,7 +5,7 @@
 // This header implements the ring Z/Z_2^k for k <= 128. Supports addition,
 // subtraction, multiplication and division (provided denominator is odd).
 //
-// The header reacts to one flags:
+// The header reacts to one flag:
 //
 // If ZTK_GCC_UINT128 is defined then arithmetic operations (except division)
 // for elements with k > 64 will use the GCC __uint128 extension.
@@ -37,7 +37,7 @@ public:
     friend class Z2k;
 
     // Useful constants
-    static constexpr Z2k<K> Zero  = Z2k<K>(0, Z2k<K>::mask);
+    static constexpr Z2k<K> Zero  = Z2k<K>((const limb_t)0, Z2k<K>::mask);
     static constexpr Z2k<K> One   = Z2k<K>(1, Z2k<K>::mask);
     static constexpr Z2k<K> Two   = Z2k<K>(2, Z2k<K>::mask);
     static constexpr Z2k<K> Three = Z2k<K>(3, Z2k<K>::mask);
@@ -67,8 +67,16 @@ public:
     // Construct the value 0
     constexpr Z2k() {};
 
+    // Constexpr constructor from constant.
     constexpr Z2k(const limb_t x, const limb_t mask) {
 	limbs[0] = x & mask;
+    };
+
+    // Constexpr constructor from constant.
+    constexpr Z2k(const limb_t x[SizeInLimbs()], const limb_t mask) {
+	limbs[SizeInLimbs()-1] = x[SizeInLimbs()-1] & mask;
+	for (size_t i = SizeInLimbs()-2; i > 0; i--)
+	    limbs[i] = x[i];
     };
 
     // Construct from a single limb.
@@ -178,7 +186,6 @@ public:
 
     // Check if element is invertible
     inline bool IsInvertible() const {
-	// IsOdd() == true implies non-zero.
 	return IsOdd();
     }
 
@@ -212,7 +219,7 @@ public:
 
     // Misc functionality
 
-    // Serialization. buf is assumed to point to at least SizeInBytes() bytes
+    // Serialization. buf is assumed to point to at least SizeInBytes() bytes of
     // memory.
     void Pack(unsigned char *buf) const {
 	memcpy(buf, this->limbs, SizeInBytes());
@@ -221,7 +228,7 @@ public:
     // To string
     std::string ToString() const;
 
-    // Priting
+    // Printing
     template<int L>
     friend std::ostream& operator<<(std::ostream &os, const Z2k<L> &x);
 

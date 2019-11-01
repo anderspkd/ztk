@@ -111,7 +111,8 @@ TEST_CASE("constructors") {
 	Z2k<8>  w {y};
 	REQUIRE(w.GetLimbs()[0] == (555 & 255));
 
-	// for a larger modulus, the value is always correct.
+	// for a larger modulus, the new value is always the same as the old
+	// one.
 	for (size_t i = 0; i < 100; i++) {
 	    Z2k<100> z = get_rand<64>();
 	    Z2k<128> zz {z};
