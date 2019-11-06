@@ -19,14 +19,16 @@
 
 namespace ztk {
 
-// An element is represented as an array of limb_t types.
+// A Z_2^K element is represented as an array of limb_t types.
 typedef uint64_t limb_t;
+
 
 #ifdef ZTK_GCC_UINT128
 #define LOAD_U128(r, x) do { (r) = ((__uint128_t)((x)[1]) << 64) | (x)[0]; } while (0)
 #define STORE_U128(r, x) do { (r)[0] = (limb_t)(x); (r)[1] = (limb_t)((x) >> 64); } while (0)
 #endif
 
+// Z/Z_2^K helpers
 template<bool B> inline void mask_if(limb_t&, const limb_t);
 template<size_t N> inline void op_add(limb_t[N], const limb_t[N], const limb_t[N]);
 template<size_t N> inline void op_inc(limb_t[N], const limb_t[N]);
@@ -401,12 +403,21 @@ std::ostream& operator<<(std::ostream &os, const Z2k<K> &x) {
     return os;
 }
 
+#ifndef ZTK_NO_GALOIS
+
 ////////////////////////////////////////////////////////////////////////////////
 // Galois rings
 ////////////////////////////////////////////////////////////////////////////////
 
-// A galois ring is parameterized by a size K and degree D, defining the ring
-// GR(2^K, D) = Z_2^K[X]/g where g is a degree D polynomial.
+// template<size_t K, size_t D>
+// inline void gr_mul(
+//     std::array<Z2k<K>, D>&,
+//     const std::array<Z2k<K>, D>&,
+//     const std::array<Z2k<K>, D>&);
+
+// A galois ring is represented as an array of Z2k elements
+template<size_t K, size_t D>
+using gr_coeff = std::array<Z2k<K>, D>;
 
 template<size_t K, size_t D>
 class GR {
@@ -425,7 +436,7 @@ public:
 
     constexpr GR() {};
 
-    GR(const std::array<Z2k<K>, D> &coeff) : coeff{coeff} {};
+    GR(const gr_coeff<K, D> &coeff) : coeff{coeff} {};
 
     GR(const GR<K, D> &x) : coeff{x.coeff} {};
 
@@ -436,7 +447,7 @@ public:
     };
 
     friend GR<K, D> operator+(const GR<K, D> &x, const GR<K, D> &y) {
-	std::array<Z2k<K>, D> rcoeff;
+	gr_coeff<K, D> rcoeff;
 	for (size_t i = 0; i < D; i++)
 	    rcoeff[i] = x.coeff[i] + y.coeff[i];
 	return GR<K, D>{rcoeff};
@@ -449,7 +460,7 @@ public:
     };
 
     friend GR<K, D> operator-(const GR<K, D> &x, const GR<K, D> &y) {
-	std::array<Z2k<K>, D> rcoeff;
+	gr_coeff<K, D> rcoeff;
 	for (size_t i = 0; i < D; i++)
 	    rcoeff[i] = x.coeff[i] - y.coeff[i];
 	return GR<K, D>{rcoeff};
@@ -461,7 +472,11 @@ public:
 	return GR<K, D>{coeff};
     };
 
-    // friend GR<K, D> operator*(const GR<K, D> &x, const GR<K, D> &y);
+    // friend GR<K, D> operator*(const GR<K, D> &x, const GR<K, D> &y) {
+    // 	std::array<Z2k<K>, D> rcoeff;
+    // 	gr_mul<K, D>(rcoeff, x.coeff, y.coeff);
+    // 	return GR<K, D>{rcoeff};
+    // };
 
     bool operator==(const GR<K, D> &x) const {
     	bool b = true;
@@ -485,12 +500,12 @@ public:
 
     std::string ToString() const;
 
-    // template<size_t L, size_t H>
-    // friend std::ostream& operator<<(std::ostream &os, const GR<K, D> &x);
+    template<size_t L, size_t H>
+    friend std::ostream& operator<<(std::ostream &os, const GR<K, D> &x);
 
 #ifdef TESTING
 
-    const std::array<Z2k<K>, D> GetCoeff() const {
+    const gr_coeff<K, D> GetCoeff() const {
 	return coeff;
     };
 
@@ -498,9 +513,30 @@ public:
 
 private:
 
-    std::array<Z2k<K>, D> coeff;
+    gr_coeff<K, D> coeff;
 
 };
+
+// // Multiplication when for degree 4 elements
+// template<size_t K>
+// inline void gr_mul<K>(
+//     std::array<Z2k<K>, 4> &r,
+//     const std::array<Z2k<K>, 4> &x,
+//     const std::array<Z2k<K>, 4> &y)
+// {
+//     auto x0 = x[0]; auto x1 = x[1]; auto x2 = x[2]; auto x3 = x[3];
+//     auto y0 = y[0]; auto y1 = y[1]; auto y2 = y[2]; auto y3 = y[3];
+
+//     auto x1y3 = x1*y3;
+//     auto x3y3 = x3*y3;
+//     auto x2y2 = x2*y2;
+//     auto x2y3 = x2*y3;
+
+//     r[0] = x0*y0 - x3*y1 - x2y2 - x1y3;
+//     r[1] = x1*y0 + x0*y1 - x3*(y1 + y2) - x2y2 - x2y3 - x1y3;
+//     r[2] = x2*y0 - x2y3 + x1*y1 + y2*(x0 - x3) - x3y3;
+//     r[3] = x3*y0 + x2*y1 + x1*y2 + x0*y3 - x3y3;
+// }
 
 template<size_t K, size_t D>
 std::string GR<K, D>::ToString() const {
@@ -517,6 +553,8 @@ std::ostream& operator<<(std::ostream &os, const GR<K, D> &x) {
     os << x.ToString();
     return os;
 }
+
+#endif
 
 } // ztk
 

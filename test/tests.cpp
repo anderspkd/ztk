@@ -222,3 +222,17 @@ TEST_CASE("assignment gr") {
 
     REQUIRE(x == y);
 }
+
+// TEST_CASE("mul gr") {
+//     GR<96, 4> a {{1, 2, 4, 8}};
+//     GR<96, 4> b {{1, 1, 1, 1}};
+
+//     auto v = a * b;
+
+//     // blegh
+//     Z2k<96> t0 (13);
+//     Z2k<96> t1 (23);
+//     GR<96, 4> c {{-t0, -t1, -t0, 7}};
+
+//     REQUIRE(v == c);
+// }
