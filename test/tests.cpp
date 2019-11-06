@@ -13,6 +13,7 @@
 
 
 using ztk::Z2k;
+using ztk::GR;
 using std::string;
 
 template<typename T>
@@ -30,6 +31,14 @@ Z2k<K> get_rand() {
 	randomize<ztk::limb_t>(e[i]);
     }
     return Z2k<K>{e};
+}
+
+template<size_t K, size_t D>
+GR<K, D> get_rand_gr() {
+    std::array<Z2k<K>, D> x;
+    for (size_t i = 0; i < D; i++)
+	x[i] = get_rand<K>();
+    return GR<K, D>{x};
 }
 
 TEST_CASE("parameters") {
@@ -74,6 +83,11 @@ TEST_CASE("equality") {
 
     REQUIRE(x0 == x1);
     REQUIRE(x0 != x2);
+}
+
+TEST_CASE("unary minus") {
+    Z2k<64> x {1234567};
+    REQUIRE(-x == -(1234567));
 }
 
 TEST_CASE("constructors") {
@@ -184,4 +198,27 @@ TEST_CASE("increment") {
 	REQUIRE(y0 == y.GetLimbs()[0]);
 	REQUIRE(y1 == y.GetLimbs()[1]);
     }
+}
+
+TEST_CASE("addition gr") {
+    GR<64, 4> x = get_rand_gr<64, 4>();
+    auto xcoeff = x.GetCoeff();
+    GR<64, 4> y = get_rand_gr<64, 4>();
+    auto ycoeff = y.GetCoeff();
+    GR<64, 4> r {x + y};
+    auto rcoeff = r.GetCoeff();
+
+    REQUIRE(rcoeff[0] == xcoeff[0] + ycoeff[0]);
+    REQUIRE(rcoeff[1] == xcoeff[1] + ycoeff[1]);
+    REQUIRE(rcoeff[2] == xcoeff[2] + ycoeff[2]);
+    REQUIRE(rcoeff[3] == xcoeff[3] + ycoeff[3]);
+}
+
+TEST_CASE("assignment gr") {
+    GR<123, 5> x = get_rand_gr<123, 5>();
+    GR<123, 5> y;
+
+    y = x;
+
+    REQUIRE(x == y);
 }

@@ -15,6 +15,7 @@
 
 #include <cstdint>
 #include <string>
+#include <array>
 
 namespace ztk {
 
@@ -155,7 +156,15 @@ public:
 	op_dec<SizeInLimbs()>(limbs, x.limbs);
 	mask_if<NeedsMasking()>(limbs[SizeInLimbs()-1], mask);
 	return *this;
-    }
+    };
+
+    // Negation
+    friend Z2k<K> operator-(const Z2k<K> &x) {
+	Z2k<K> r;
+	op_sub<SizeInLimbs()>(r.limbs, Z2k<K>::Zero.limbs, x.limbs);
+	mask_if<NeedsMasking()>(r.limbs[SizeInLimbs()-1], mask);
+	return r;
+    };
 
     // Multiplication
     friend Z2k<K> operator*(const Z2k<K> &x, const Z2k<K> &y) {
@@ -234,7 +243,7 @@ public:
     std::string ToString() const;
 
     // Printing
-    template<int L>
+    template<size_t L>
     friend std::ostream& operator<<(std::ostream &os, const Z2k<L> &x);
 
 #ifdef TESTING
@@ -387,7 +396,124 @@ std::string Z2k<K>::ToString() const {
 }
 
 template<size_t K>
-std::ostream &operator<<(std::ostream &os, const Z2k<K> &x) {
+std::ostream& operator<<(std::ostream &os, const Z2k<K> &x) {
+    os << x.ToString();
+    return os;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Galois rings
+////////////////////////////////////////////////////////////////////////////////
+
+// A galois ring is parameterized by a size K and degree D, defining the ring
+// GR(2^K, D) = Z_2^K[X]/g where g is a degree D polynomial.
+
+template<size_t K, size_t D>
+class GR {
+public:
+
+    // Since a GR element is essentially a vector of Z_2^K elements, the bit
+    // size is K*D.
+    static constexpr size_t SizeInBits() {
+	return K * D;
+    };
+
+    // Size of element in bytes
+    static constexpr size_t SizeInBytes() {
+	return Z2k<K>::SizeInBytes() * D;
+    };
+
+    constexpr GR() {};
+
+    GR(const std::array<Z2k<K>, D> &coeff) : coeff{coeff} {};
+
+    GR(const GR<K, D> &x) : coeff{x.coeff} {};
+
+    GR<K, D>& operator=(const GR<K, D> &x) {
+	for (size_t i = 0; i < D; i++)
+	    coeff[i] = x.coeff[i];
+	return *this;
+    };
+
+    friend GR<K, D> operator+(const GR<K, D> &x, const GR<K, D> &y) {
+	std::array<Z2k<K>, D> rcoeff;
+	for (size_t i = 0; i < D; i++)
+	    rcoeff[i] = x.coeff[i] + y.coeff[i];
+	return GR<K, D>{rcoeff};
+    };
+
+    GR<K, D> operator+=(const GR<K, D> &x) {
+	for (size_t i = 0; i < D; i++)
+	    coeff[i] += x.coeff[i];
+	return GR<K, D>{coeff};
+    };
+
+    friend GR<K, D> operator-(const GR<K, D> &x, const GR<K, D> &y) {
+	std::array<Z2k<K>, D> rcoeff;
+	for (size_t i = 0; i < D; i++)
+	    rcoeff[i] = x.coeff[i] - y.coeff[i];
+	return GR<K, D>{rcoeff};
+    };
+
+    GR<K, D> operator-=(const GR<K, D> &x) {
+	for (size_t i = 0; i < D; i++)
+	    coeff[i] -= x.coeff[i];
+	return GR<K, D>{coeff};
+    };
+
+    // friend GR<K, D> operator*(const GR<K, D> &x, const GR<K, D> &y);
+
+    bool operator==(const GR<K, D> &x) const {
+    	bool b = true;
+    	for (size_t i = 0; i < D; i++)
+    	    b &= coeff[i] == x.coeff[i];
+    	return b;
+    };
+
+    bool operator !=(const GR<K, D> &x) const {
+    	return !(*this == x);
+    };
+
+    // GR<K, D> Invert() const {
+    // 	GR<K, D> r;
+    // 	gr_invert<D>(r.GetCoefficients(), GetCoefficiencts());
+    // };
+
+    // friend GR<K, D> operator/(const GR<K, D> &x, const GR<K, D> &y);
+
+    // void Pack(unsigned char *buf) const;
+
+    std::string ToString() const;
+
+    // template<size_t L, size_t H>
+    // friend std::ostream& operator<<(std::ostream &os, const GR<K, D> &x);
+
+#ifdef TESTING
+
+    const std::array<Z2k<K>, D> GetCoeff() const {
+	return coeff;
+    };
+
+#endif
+
+private:
+
+    std::array<Z2k<K>, D> coeff;
+
+};
+
+template<size_t K, size_t D>
+std::string GR<K, D>::ToString() const {
+    std::stringstream ss;
+    ss << "{";
+    for (size_t i = 0; i < D - 1; i++)
+	ss << coeff[i] << ", ";
+    ss << coeff[D - 1] << "}";
+    return ss.str();
+}
+
+template<size_t K, size_t D>
+std::ostream& operator<<(std::ostream &os, const GR<K, D> &x) {
     os << x.ToString();
     return os;
 }
