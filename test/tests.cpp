@@ -14,6 +14,7 @@
 
 using ztk::Z2k;
 using ztk::GR;
+using ztk::GR4;
 using std::string;
 
 template<typename T>
@@ -86,8 +87,32 @@ TEST_CASE("equality") {
 }
 
 TEST_CASE("unary minus") {
-    Z2k<64> x {1234567};
-    REQUIRE(-x == -(1234567));
+    SECTION("64") {
+	Z2k<64> x {1234567};
+	REQUIRE(-x == -(1234567));
+    }
+
+    SECTION("2 limbs") {
+	Z2k<96> x = get_rand<96>();
+	uint64_t t[2];
+	mpn_neg(t, x.GetLimbs(), 2);
+
+	auto r = -x;
+
+	REQUIRE(r.GetLimbs()[0] == t[0]);
+	REQUIRE(r.GetLimbs()[1] == (t[1] & Z2k<96>::GetMask()));
+    }
+
+    SECTION("2 limbs det") {
+	Z2k<96> x (13);
+	uint64_t t[2];
+	mpn_neg(t, x.GetLimbs(), 2);
+
+	auto r = -x;
+
+	REQUIRE(r.GetLimbs()[0] == t[0]);
+	REQUIRE(r.GetLimbs()[1] == (t[1] & Z2k<96>::GetMask()));
+    }
 }
 
 TEST_CASE("constructors") {
@@ -224,15 +249,15 @@ TEST_CASE("assignment gr") {
 }
 
 // TEST_CASE("mul gr") {
-//     GR<96, 4> a {{1, 2, 4, 8}};
-//     GR<96, 4> b {{1, 1, 1, 1}};
+//     GR4<64> a {{1, 2, 4, 8}};
+//     GR4<64> b {{1, 1, 1, 1}};
 
 //     auto v = a * b;
 
 //     // blegh
-//     Z2k<96> t0 (13);
-//     Z2k<96> t1 (23);
-//     GR<96, 4> c {{-t0, -t1, -t0, 7}};
+//     Z2k<64> t0 (13);
+//     Z2k<64> t1 (23);
+//     GR4<64> c {{-t0, -t1, -t0, 7}};
 
 //     REQUIRE(v == c);
 // }
