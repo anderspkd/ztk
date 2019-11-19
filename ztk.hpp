@@ -342,10 +342,10 @@ inline void op_sub<1>(limb_t r[1], const limb_t x[1], const limb_t y[1]) {
 template<>
 inline void op_sub<2>(limb_t r[2], const limb_t x[2], const limb_t y[2]) {
 #ifdef ZTK_GCC_UINT128
-    __uint128_t _x, _r;
-    LOAD_U128(_x, x);
-    LOAD_U128(_r, y);
-    _r -= _x;
+    __uint128_t _y, _r;
+    LOAD_U128(_y, y);
+    LOAD_U128(_r, x);
+    _r -= _y;
     STORE_U128(r, _r);
 #else
     asm ("movq %3, %1 \n\t"
