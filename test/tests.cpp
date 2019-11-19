@@ -31,6 +31,11 @@ GR<K, D> random_gr() {
     return GR<K, D>{coeff};
 }
 
+template<size_t K>
+GR4<K> random_gr4() {
+    return static_cast<GR4<K>>(random_gr<K, 4>());
+}
+
 TEST_CASE("constructors") {
     SECTION("0") {
 	Z2k<64> x64;
@@ -463,4 +468,18 @@ TEST_CASE("gr addition subtraction") {
     SECTION("128, 4") {
 	test_addition_and_subtraction<32, 4>();
     }
+}
+
+TEST_CASE("invert") {
+    GR4<123> a = random_gr4<123>();
+    while (!a.IsInvertible())
+	a = random_gr4<123>();
+    GR4<123> b = a;
+
+    GR4<123> c = a / b;
+
+    REQUIRE(c.GetCoeff()[0] == Z2k<123>::One);
+    REQUIRE(c.GetCoeff()[1] == Z2k<123>::Zero);
+    REQUIRE(c.GetCoeff()[2] == Z2k<123>::Zero);
+    REQUIRE(c.GetCoeff()[3] == Z2k<123>::Zero);
 }

@@ -513,12 +513,6 @@ public:
     	return !(*this == x);
     };
 
-    // GR<K, D> Invert() const {
-    // 	GR<K, D> r;
-    // 	gr_invert<D>(r.GetCoefficients(), GetCoefficiencts());
-    // };
-
-    // friend GR<K, D> operator/(const GR<K, D> &x, const GR<K, D> &y);
 
     // void Pack(unsigned char *buf) const;
 
@@ -569,6 +563,49 @@ public:
     	r[3] = v3*u0 + v2*u1 + v1*u2 + v0*u3 - v3*u3;
 
     	return GR4<K>{r};
+    };
+
+    GR4<K> Invert() const {
+	assert (this->IsInvertible());
+    	gr_coeff<K, 4> r;
+
+	const auto v0 = this->coeff[0]; const auto v1 = this->coeff[1];
+	const auto v2 = this->coeff[2]; const auto v3 = this->coeff[3];
+
+	auto d = Denom().Invert();
+
+	r[0] = (v0*v0*v0 - v1*v1*v1 + Z2k<K>::Three*v0*v1*v2 - v1*v1*v2 + v0*v2*v2
+		+ v2*v2*v2 - Z2k<K>::Three*v0*v0*v3 + Z2k<K>::Two*v0*v1*v3
+		- Z2k<K>::Three*v1*v2*v3 + v2*v2*v3 + Z2k<K>::Three*v0*v3*v3
+		- Z2k<K>::Two*v1*v3*v3 + v2*v3*v3 - v3*v3*v3)*d;
+
+	r[1] = (-d)*(v0*v0*v1 - v1*v2*v2 + v1*v1*v3 + v3*v3*v3 + v0*(v2*v2 - v1*v3 + Z2k<K>::Two*v2*v3));
+
+	r[2] = d*(-v0*v0*v2 - v2*v2*v2 + Z2k<K>::Two*v1*v2*v3 + v3*v3*v3 + v0*(v1*v1 + (v2 - v3)*v3));
+
+	r[3] = (-d)*(v1*v1*v1 - Z2k<K>::Two*v0*v1*v2 - v2*v2*v2 - v2*v2*v3
+		     + (v0 - v3)*(v0-v3)*v3 + v1*v3*(Z2k<K>::Three*v2 + v3));
+
+	return GR4<K>{r};
+    };
+
+    friend GR4<K> operator/(const GR4<K> &x, const GR4<K> &y) {
+	auto y_ = y.Invert();
+	return x * y_;
+    };
+
+private:
+
+    Z2k<K> Denom() const {
+	const auto v0 = this->coeff[0]; const auto v1 = this->coeff[1];
+	const auto v2 = this->coeff[2]; const auto v3 = this->coeff[3];
+
+	return v0*v0*v0*v0 + v1*v1*v1*v1 - v1*v2*v2*v2 + v2*v2*v2*v2
+	    - Z2k<K>::Three*v0*v0*v0*v3 + v1*(Z2k<K>::Three*v1 - Z2k<K>::Four*v2)*v2*v3
+	    + Z2k<K>::Two*v1*v1*v3*v3 + (v1 - v2)*v3*v3*v3 + v3*v3*v3*v3
+	    + v0*v0*(Z2k<K>::Three*v1*v2 + Z2k<K>::Two*v2*v2 + Z2k<K>::Four*v1*v3 + Z2k<K>::Three*v3*v3)
+	    - v0*(v1*v1*v1 + Z2k<K>::Four*v1*v1*v2 - v2*v2*v2 + (Z2k<K>::Three*v1 - v2)*v2*v3
+		  + (Z2k<K>::Five*v1 - Z2k<K>::Four*v2)*v3*v3 + v3*v3*v3);
     };
 };
 
