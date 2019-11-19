@@ -483,3 +483,39 @@ TEST_CASE("invert") {
     REQUIRE(c.GetCoeff()[2] == Z2k<123>::Zero);
     REQUIRE(c.GetCoeff()[3] == Z2k<123>::Zero);
 }
+
+TEST_CASE("gr multiplication") {
+    // TODO(contrived. Figure out a better way to test this function)
+
+    // {1,2,4,8} * {1,1,1,1} == {-13, -23, -13, 7};
+
+    SECTION("64") {
+	GR4<64> a {{Z2k<64>{1}, Z2k<64>{2}, Z2k<64>{4}, Z2k<64>{8}}};
+	GR4<64> b {{Z2k<64>{1}, Z2k<64>{1}, Z2k<64>{1}, Z2k<64>{1}}};
+
+	auto c = a * b;
+
+	GR4<64> c_ {{-Z2k<64>{13}, -Z2k<64>{23}, -Z2k<64>{13}, Z2k<64>{7}}};
+	REQUIRE(c == c_);
+    }
+
+    SECTION("123") {
+	GR4<123> a {{Z2k<123>{1}, Z2k<123>{2}, Z2k<123>{4}, Z2k<123>{8}}};
+	GR4<123> b {{Z2k<123>{1}, Z2k<123>{1}, Z2k<123>{1}, Z2k<123>{1}}};
+
+	auto c = a * b;
+
+	GR4<123> c_ {{-Z2k<123>{13}, -Z2k<123>{23}, -Z2k<123>{13}, Z2k<123>{7}}};
+	REQUIRE(c == c_);
+    }
+
+    SECTION("128") {
+	GR4<128> a {{Z2k<128>{1}, Z2k<128>{2}, Z2k<128>{4}, Z2k<128>{8}}};
+	GR4<128> b {{Z2k<128>{1}, Z2k<128>{1}, Z2k<128>{1}, Z2k<128>{1}}};
+
+	auto c = a * b;
+
+	GR4<128> c_ {{-Z2k<128>{13}, -Z2k<128>{23}, -Z2k<128>{13}, Z2k<128>{7}}};
+	REQUIRE(c == c_);
+    }
+}

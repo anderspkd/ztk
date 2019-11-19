@@ -513,8 +513,20 @@ public:
     	return !(*this == x);
     };
 
+    bool IsInvertible() const {
+	bool b = false;
+	for (const auto &x: coeff)
+	    b = x.IsOdd() or b;
+	return b;
+    };
 
-    // void Pack(unsigned char *buf) const;
+    void Pack(unsigned char *buf) const {
+	auto p = buf;
+	for (size_t i = 0; i < D; i++) {
+	    coeff[i].Pack(p);
+	    p += Z2k<K>::SizeInBytes();
+	}
+    }
 
     std::string ToString() const;
 
@@ -539,6 +551,7 @@ template<size_t K>
 class GR4 : public GR<K, 4> {
 public:
 
+    GR4() {};
     GR4(const gr_coeff<K, 4> &coeff) : GR<K, 4>{coeff} {};
     GR4(const GR<K, 4> &x) : GR<K, 4>{x} {};
 
@@ -549,11 +562,6 @@ public:
 
     	auto v0 = v[0]; auto v1 = v[1]; auto v2 = v[2]; auto v3 = v[3];
     	auto u0 = u[0]; auto u1 = u[1]; auto u2 = u[2]; auto u3 = u[3];
-
-    	// auto v1u3 = v1*u3;
-    	// auto v3u3 = v3*u3;
-    	// auto v2u2 = v2*u2;
-    	// auto v2u3 = v2*u3;
 
     	gr_coeff<K, 4> r;
 
