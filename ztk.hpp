@@ -14,8 +14,9 @@
 #define _ZTK_HPP
 
 #include <cstdint>
-#include <string>
+#include <cstring>
 #include <array>
+#include <sstream>
 
 namespace ztk {
 
@@ -49,6 +50,8 @@ public:
     static constexpr Z2k<K> One   = Z2k<K>(1, Z2k<K>::mask);
     static constexpr Z2k<K> Two   = Z2k<K>(2, Z2k<K>::mask);
     static constexpr Z2k<K> Three = Z2k<K>(3, Z2k<K>::mask);
+    static constexpr Z2k<K> Four  = Z2k<K>(4, Z2k<K>::mask);
+    static constexpr Z2k<K> Five  = Z2k<K>(5, Z2k<K>::mask);
 
     // Size of an element in bits.
     static constexpr size_t SizeInBits() {
@@ -86,9 +89,9 @@ public:
 
     // Constexpr constructor from constant.
     constexpr Z2k(const limb_t x[SizeInLimbs()], const limb_t mask) {
-	limbs[SizeInLimbs()-1] = x[SizeInLimbs()-1] & mask;
-	for (size_t i = SizeInLimbs()-2; i > 0; i--)
+	for (size_t i = 0; i < SizeInLimbs(); i++)
 	    limbs[i] = x[i];
+	limbs[SizeInLimbs()-1] &= mask;
     };
 
     // Construct from a single limb.
@@ -97,9 +100,11 @@ public:
 	mask_if<NeedsMasking()>(limbs[0], mask);
     };
 
-    // Construct frin a set of limbs.
+    // Construct from a set of limbs.
     Z2k(const limb_t limbs[SizeInLimbs()]) {
-	memcpy(this->limbs, limbs, SizeInBytes());
+	// memcpy(this->limbs, limbs, SizeInBytes());
+	for (size_t i = 0; i < SizeInLimbs(); i++)
+	    this->limbs[i] = limbs[i];
 	mask_if<NeedsMasking()>(this->limbs[SizeInLimbs()-1], mask);
     };
 
@@ -130,7 +135,9 @@ public:
 
     // Assignment.
     Z2k<K>& operator=(const Z2k<K> &x) {
-	memcpy(this->limbs, x.limbs, SizeInBytes());
+	// memcpy(this->limbs, x.limbs, SizeInBytes());
+	for (size_t i = 0; i < SizeInLimbs(); i++)
+	    this->limbs[i] = x.limbs[i];
 	return *this;
     };
 
@@ -178,6 +185,12 @@ public:
 	op_mul<SizeInLimbs()>(r.limbs, x.limbs, y.limbs);
 	mask_if<NeedsMasking()>(r.limbs[SizeInLimbs()-1], mask);
 	return r;
+    };
+
+    Z2k<K> operator*=(const Z2k<K> &x) {
+	op_mul<SizeInLimbs()>(limbs, limbs, x.limbs);
+	mask_if<NeedsMasking()>(limbs[SizeInLimbs()-1], mask);
+	return *this;
     };
 
     // Equality test
@@ -276,6 +289,8 @@ template<size_t K> const Z2k<K> Z2k<K>::Zero;
 template<size_t K> const Z2k<K> Z2k<K>::One;
 template<size_t K> const Z2k<K> Z2k<K>::Two;
 template<size_t K> const Z2k<K> Z2k<K>::Three;
+template<size_t K> const Z2k<K> Z2k<K>::Four;
+template<size_t K> const Z2k<K> Z2k<K>::Five;
 
 template<>
 inline void mask_if<true>(limb_t &r, const limb_t mask) {
