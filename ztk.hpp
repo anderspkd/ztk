@@ -211,14 +211,14 @@ public:
 
     // Compute inverse of element. Fails if element is not invertible.
     Z2k<K> Invert() const {
-	assert (IsInvertible());
+	assert (this->IsInvertible());
 
 	// See https://marc-b-reynolds.github.io/math/2017/09/18/ModInverse.html
+	// z = 3*x ^ 2
 	const auto x = *this;
 	auto z = x * Z2k<K>::Three;
 	z.limbs[0] ^= 2;
 
-	z = z * (Z2k<K>::Two - x * z);  // 5 bits
 	z = z * (Z2k<K>::Two - x * z);  // 10 bits
 	z = z * (Z2k<K>::Two - x * z);  // 20 bits
 	z = z * (Z2k<K>::Two - x * z);  // 40 bits
