@@ -441,12 +441,6 @@ std::ostream& operator<<(std::ostream &os, const Z2k<K> &x) {
 // Galois rings
 ////////////////////////////////////////////////////////////////////////////////
 
-template<size_t K, size_t D>
-inline void gr_mul(
-    std::array<Z2k<K>, D>&,
-    const std::array<Z2k<K>, D>&,
-    const std::array<Z2k<K>, D>&);
-
 // A galois ring is represented as an array of Z2k elements
 template<size_t K, size_t D>
 using gr_coeff = std::array<Z2k<K>, D>;
@@ -471,6 +465,10 @@ public:
     GR(const gr_coeff<K, D> &coeff) : coeff{coeff} {};
 
     GR(const GR<K, D> &x) : coeff{x.coeff} {};
+
+    GR(const Z2k<K> &x) {
+	coeff[0] = x;
+    };
 
     GR<K, D>& operator=(const GR<K, D> &x) {
 	for (size_t i = 0; i < D; i++)

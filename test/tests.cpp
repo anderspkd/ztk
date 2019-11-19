@@ -23,6 +23,13 @@ Z2k<K> random_Z2k() {
     return Z2k<K>{e};
 }
 
+template<size_t K, size_t D>
+GR<K, D> random_gr() {
+    gr_coeff<K, D> coeff;
+    for (size_t i = 0; i < D; i++)
+	coeff[i] = random_Z2k<K>();
+    return GR<K, D>{coeff};
+}
 
 TEST_CASE("constructors") {
     SECTION("0") {
@@ -360,4 +367,100 @@ TEST_CASE("packing/serialization") {
     a.Pack(buf);
     Z2k<123> b{buf};
     REQUIRE(a == b);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Galois rings tests
+////////////////////////////////////////////////////////////////////////////////
+
+TEST_CASE("Constructors") {
+    SECTION("0") {
+	GR<32, 4> x;
+	REQUIRE(x.GetCoeff()[0] == Z2k<32>::Zero);
+	REQUIRE(x.GetCoeff()[1] == Z2k<32>::Zero);
+	REQUIRE(x.GetCoeff()[2] == Z2k<32>::Zero);
+	REQUIRE(x.GetCoeff()[3] == Z2k<32>::Zero);
+    }
+    SECTION("from coefficients") {
+	gr_coeff<32, 4> a = {Z2k<32>::One, Z2k<32>::Two, Z2k<32>::Three, Z2k<32>::Four};
+	GR<32, 4> x {a};
+	REQUIRE(x.GetCoeff()[0] == Z2k<32>::One);
+	REQUIRE(x.GetCoeff()[1] == Z2k<32>::Two);
+	REQUIRE(x.GetCoeff()[2] == Z2k<32>::Three);
+	REQUIRE(x.GetCoeff()[3] == Z2k<32>::Four);
+    }
+    SECTION("from random coefficients") {
+	gr_coeff<64, 5> a;
+	for (size_t i = 0; i < 5; i++)
+	    a[i] = random_Z2k<64>();
+	GR<64, 5> x {a};
+	for (size_t i = 0; i < 5; i++)
+	    REQUIRE(a[i] == x.GetCoeff()[i]);
+    }
+    SECTION("from other") {
+	auto a = random_gr<64, 4>();
+	GR<64, 4> b {a};
+
+	for (size_t i = 0; i < 4; i++)
+	    REQUIRE(a.GetCoeff()[i] == b.GetCoeff()[i]);
+    }
+    SECTION("from z2k") {
+	const auto a = random_Z2k<64>();
+	auto b = random_Z2k<64>();
+	GR<64, 4> x (a);
+	GR<64, 4> y (b);
+	REQUIRE(x.GetCoeff()[0] == a);
+	REQUIRE(x.GetCoeff()[1] == Z2k<32>::Zero);
+	REQUIRE(x.GetCoeff()[2] == Z2k<32>::Zero);
+	REQUIRE(x.GetCoeff()[3] == Z2k<32>::Zero);
+	REQUIRE(y.GetCoeff()[0] == b);
+	REQUIRE(y.GetCoeff()[1] == Z2k<32>::Zero);
+	REQUIRE(y.GetCoeff()[2] == Z2k<32>::Zero);
+	REQUIRE(y.GetCoeff()[3] == Z2k<32>::Zero);
+    }
+}
+
+TEST_CASE("gr assignment") {
+    auto a = random_gr<64, 4>();
+    auto b = a;
+
+    for (size_t i = 0; i < 4; i++)
+	REQUIRE(a.GetCoeff()[i] == b.GetCoeff()[i]);
+}
+
+template<size_t K, size_t D>
+void test_addition_and_subtraction() {
+    // doing two for one in this function
+
+    auto a = random_gr<K, D>();
+    auto b = random_gr<K, D>();
+
+    auto c = a + b;
+    auto d = a - b;
+
+    for (size_t i = 0; i < D; i++) {
+	REQUIRE(c.GetCoeff()[i] == (a.GetCoeff()[i] + b.GetCoeff()[i]));
+	REQUIRE(d.GetCoeff()[i] == (a.GetCoeff()[i] - b.GetCoeff()[i]));
+    }
+}
+
+TEST_CASE("gr addition subtraction") {
+    SECTION("32, 4") {
+	test_addition_and_subtraction<32, 4>();
+    }
+    SECTION("42, 4") {
+	test_addition_and_subtraction<32, 4>();
+    }
+    SECTION("64, 4") {
+	test_addition_and_subtraction<32, 4>();
+    }
+    SECTION("96, 4") {
+	test_addition_and_subtraction<32, 4>();
+    }
+    SECTION("123, 4") {
+	test_addition_and_subtraction<32, 4>();
+    }
+    SECTION("128, 4") {
+	test_addition_and_subtraction<32, 4>();
+    }
 }
