@@ -11,15 +11,15 @@ endif
 # @echo -e "\ntesting with GCC __uint128_t extension"
 # @./test_uint128
 
-tests: ztk.hpp
-	$(CXX) $(CXXFLAGS) -DTESTING -DZTK_GCC_UINT128 test-main.o test/tests.cpp -o test_uint128 $(TEST_LDFLAGS)
+tests: test/test-main.o ztk.hpp
+	$(CXX) $(CXXFLAGS) -DTESTING -DZTK_GCC_UINT128 test/test-main.o test/tests.cpp -o test_uint128 $(TEST_LDFLAGS)
 	@echo -e "\ntesting with GCC __uint128_t extension"
 	@./test_uint128
 
 test/test-main.o: test/test-main.cpp
-	$(CXX) $(CXXFLAGS) test/test-main.cpp -c
+	$(CXX) $(CXXFLAGS) test/test-main.cpp -c -o test/test-main.o
 
 clean:
-	rm -f test_uint128 test_asm
+	rm -f test_uint128 test_asm test/test-main.o
 
-.PHONE: tests benchmark
+.PHONE: tests
