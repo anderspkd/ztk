@@ -364,6 +364,19 @@ inline void op_dec<1>(limb_t r[1], const limb_t x[1]) {
 }
 
 template<>
+inline void op_dec<2>(limb_t r[2], const limb_t x[2]) {
+#ifdef ZTK_GCC_UINT128
+    __uint128_t _x, _r;
+    LOAD_U128(_x, x);
+    LOAD_U128(_r, r);
+    _r -= _x;
+    STORE_U128(r, _r);
+#else
+#error "No non-gcc option for dec"
+#endif
+}
+
+template<>
 inline void op_mul<1>(limb_t r[1], const limb_t x[1], const limb_t y[1]) {
     r[0] = x[0] * y[0];
 }
