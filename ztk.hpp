@@ -16,6 +16,15 @@
 // Header only efficient implementation of the Ring Z/Z_2^K for K <= 128, and
 // with limited support for the Galois Ring GR(2^K, 4), i.e., a degree 4
 // extension of Z/Z_2^K (for K <= 128).
+//
+// Reacts to 2 symbol definitions.
+//
+// If ZTK_NO_GCC_UINT128 is defined, then operations on Z/Z_2^K elements for K >
+// 64 relies on inline asm. Decrement (-=) is not currently supported in this
+// case and use of this flag is not recommended.
+//
+// If ZTK_NO_GALOIS_RINGS is defined then no support for GR(2^K, 4) is
+// provided. This (I'm guessing) will reduce code size.
 
 #ifndef _ZTK_HPP
 #define _ZTK_HPP
@@ -399,8 +408,6 @@ public:
     	return x * y.Invert();
     };
 
-    // Misc functionality
-
     // Packs `this' into a buf.
     //
     // @param buf pointer to at least Z2k<K>::SizeInBytes() available memory.
@@ -473,13 +480,7 @@ inline void op_add<1>(limb_t r[1], const limb_t x[1], const limb_t y[1]) {
 
 template<>
 inline void op_add<2>(limb_t r[2], const limb_t x[2], const limb_t y[2]) {
-#ifdef ZTK_GCC_UINT128
-    __uint128_t _x, _r;
-    LOAD_U128(_x, x);
-    LOAD_U128(_r, y);
-    _r += _x;
-    STORE_U128(r, _r);
-#else
+#ifdef ZTK_NO_GCC_UINT128
     asm ("movq	%3, %1 \n\t"
     	 "movq	%2, %0 \n\t"
     	 "addq	%5, %1 \n\t"
@@ -487,6 +488,12 @@ inline void op_add<2>(limb_t r[2], const limb_t x[2], const limb_t y[2]) {
     	 : "+r" (r[1]), "+r" (r[0])
     	 : "r" (x[1]), "r" (x[0]), "r" (y[1]), "r" (y[0]) : "cc"
     	);
+#else
+    __uint128_t _x, _r;
+    LOAD_U128(_x, x);
+    LOAD_U128(_r, y);
+    _r += _x;
+    STORE_U128(r, _r);
 #endif
 }
 
@@ -497,18 +504,18 @@ inline void op_inc<1>(limb_t r[1], const limb_t x[1]) {
 
 template<>
 inline void op_inc<2>(limb_t r[2], const limb_t x[2]) {
-#ifdef ZTK_GCC_UINT128
-    __uint128_t _x, _r;
-    LOAD_U128(_x, x);
-    LOAD_U128(_r, r);
-    _r += _x;
-    STORE_U128(r, _r);
-#else
+#ifdef ZTK_NO_GCC_UINT128
     asm ("addq %3, %1 \n\t"
 	 "adcq %2, %0 \n\t"
 	 : "+r" (r[1]), "+r" (r[0])
 	 : "r" (x[1]), "r" (x[0]) : "cc"
 	);
+#else
+    __uint128_t _x, _r;
+    LOAD_U128(_x, x);
+    LOAD_U128(_r, r);
+    _r += _x;
+    STORE_U128(r, _r);
 #endif
 }
 
@@ -519,13 +526,7 @@ inline void op_sub<1>(limb_t r[1], const limb_t x[1], const limb_t y[1]) {
 
 template<>
 inline void op_sub<2>(limb_t r[2], const limb_t x[2], const limb_t y[2]) {
-#ifdef ZTK_GCC_UINT128
-    __uint128_t _y, _r;
-    LOAD_U128(_y, y);
-    LOAD_U128(_r, x);
-    _r -= _y;
-    STORE_U128(r, _r);
-#else
+#ifdef ZTK_NO_GCC_UINT128
     asm ("movq %3, %1 \n\t"
 	 "movq %2, %0 \n\t"
 	 "subq %5, %1 \n\t"
@@ -533,6 +534,12 @@ inline void op_sub<2>(limb_t r[2], const limb_t x[2], const limb_t y[2]) {
 	 : "+r" (r[1]), "+r" (r[0])
 	 : "r" (x[1]), "r" (x[0]), "r" (y[1]), "r" (y[0]) : "cc"
 	);
+#else
+    __uint128_t _y, _r;
+    LOAD_U128(_y, y);
+    LOAD_U128(_r, x);
+    _r -= _y;
+    STORE_U128(r, _r);
 #endif
 }
 
@@ -543,14 +550,15 @@ inline void op_dec<1>(limb_t r[1], const limb_t x[1]) {
 
 template<>
 inline void op_dec<2>(limb_t r[2], const limb_t x[2]) {
-#ifdef ZTK_GCC_UINT128
+#ifdef ZTK_NO_GCC_UINT128
+    // TODO(Implement)
+    throw std::runtime_error("sub of 2 limbs not supported without __uint128");
+#else
     __uint128_t _x, _r;
     LOAD_U128(_x, x);
     LOAD_U128(_r, r);
     _r -= _x;
     STORE_U128(r, _r);
-#else
-#error "No non-gcc option for dec"
 #endif
 }
 
@@ -561,13 +569,7 @@ inline void op_mul<1>(limb_t r[1], const limb_t x[1], const limb_t y[1]) {
 
 template<>
 inline void op_mul<2>(limb_t r[2], const limb_t x[2], const limb_t y[2]) {
-#ifdef ZTK_GCC_UINT128
-    __uint128_t _x, _r;
-    LOAD_U128(_x, x);
-    LOAD_U128(_r, y);
-    _r *= _x;
-    STORE_U128(r, _r);
-#else
+#ifdef ZTK_NO_GCC_UINT128
     asm ("mulx  %5, %1, %%r8     \n\t"
          "mulx  %4, %%r9, %%r10  \n\t"
          "addq  %%r9, %%r8       \n\t"
@@ -580,6 +582,12 @@ inline void op_mul<2>(limb_t r[2], const limb_t x[2], const limb_t y[2]) {
 	 : "r" (x[1]), "d" (x[0]), "r" (y[1]), "r" (y[0])
 	 : "cc", "%r8", "%r9", "%r10"
 	);
+#else
+    __uint128_t _x, _r;
+    LOAD_U128(_x, x);
+    LOAD_U128(_r, y);
+    _r *= _x;
+    STORE_U128(r, _r);
 #endif
 }
 
@@ -598,7 +606,7 @@ std::ostream& operator<<(std::ostream &os, const Z2k<K> &x) {
     return os;
 }
 
-#ifndef ZTK_NO_GALOIS
+#ifndef ZTK_NO_GALOIS_RINGS
 
 ////////////////////////////////////////////////////////////////////////////////
 // Galois rings
@@ -796,7 +804,7 @@ std::ostream& operator<<(std::ostream &os, const GR<K, D> &x) {
     return os;
 }
 
-#endif
+#endif // ZTK_NO_GALOIS_RINGS
 
 } // ztk
 
