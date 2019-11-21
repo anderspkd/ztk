@@ -1,4 +1,5 @@
-#include "test-main.cpp"
+#define CATCH_CONFIG_ENABLE_BENCHMARKING
+#include "catch.hpp"
 
 #include "../ztk.hpp"
 
@@ -24,7 +25,8 @@ Z2k<K> random_Z2k() {
 
 template<size_t K>
 Z2k<K> bench_mul(Z2k<K> x, Z2k<K> y) {
-    return x * y;
+    auto z = x * y;
+    return z;
 }
 
 template<size_t L, size_t K>
