@@ -1,0 +1,14 @@
+#+TITLE: ztk -- header only implementation of Z/Z_2^K arithmetic
+
+~ztk~ is a header only library which implements support for arithmetic on the
+ring Z/Z_2^K for ~K <= 128~.
+
+In addition, ~ztk~ also has support for the specific Galois Ring ~GR(2^K, 4)~;
+i.e., the degree 4 exntension of Z/Z_2^K.
+
+** TODOs
+
+   - Documentation for ~GR4~ and ~GR~.
+   - Examples of how how to use ~ztk~ (for now, see the code in ~test/tests.cpp~).
+   - Wider Galois ring support.
+   - Non-broken benchmarks.
