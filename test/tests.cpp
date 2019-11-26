@@ -519,3 +519,46 @@ TEST_CASE("gr multiplication") {
 	REQUIRE(c == c_);
     }
 }
+
+TEST_CASE("apply ztk") {
+    Z2k<64> x;
+
+    REQUIRE(x == Z2k<64>::Zero);
+
+    auto randomizer = [](unsigned char *buf, size_t size) {
+	randombytes_buf(buf, size);
+    };
+
+    x.Apply(randomizer);
+
+    REQUIRE(x != Z2k<64>::Zero);
+
+    Z2k<128> y;
+
+    REQUIRE(y == Z2k<128>::Zero);
+
+    y.Apply(randomizer);
+
+    REQUIRE(y != Z2k<128>::Zero);
+
+    auto ylmbs = y.GetLimbs();
+    REQUIRE(ylmbs[0] != 0);
+    REQUIRE(ylmbs[1] != 0);
+}
+
+TEST_CASE("apply gr") {
+
+    GR<64, 5> x;
+
+    for (auto &c : x.GetCoeff())
+	REQUIRE(c == Z2k<64>::Zero);
+
+    auto randomizer = [](unsigned char *buf, size_t size) {
+	randombytes_buf(buf, size);
+    };
+
+    x.Apply(randomizer);
+
+    for (auto &c : x.GetCoeff())
+	REQUIRE(c != Z2k<64>::Zero);
+}

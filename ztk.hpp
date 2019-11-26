@@ -415,6 +415,14 @@ public:
 	memcpy(buf, this->limbs, SizeInBytes());
     };
 
+    // Apply a function on this element as a raw buffer.
+    //
+    // This function takes a function pointer as input and applies it to the raw
+    // underlying value.
+    void Apply(void (*f)(unsigned char *buf, size_t size)) {
+	f((unsigned char *)limbs, SizeInBytes());
+    }
+
     // Computes a string representation of `this'.
     //
     // An element is represented in string form as
@@ -697,7 +705,13 @@ public:
 	    coeff[i].Pack(p);
 	    p += Z2k<K>::SizeInBytes();
 	}
-    }
+    };
+
+    // Apply f on each coefficient
+    void Apply(void (*f)(unsigned char *buf, size_t size)) {
+	for (auto &c : coeff)
+	    c.Apply(f);
+    };
 
     std::string ToString() const;
 
