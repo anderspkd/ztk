@@ -644,6 +644,14 @@ public:
 	return D;
     };
 
+    static constexpr size_t CoeffSizeInBytes() {
+	return Z2k<K>::SizeInBytes();
+    };
+
+    static constexpr size_t CoeffSizeInBits() {
+	return K;
+    };
+
     // Size of element in bytes
     static constexpr size_t SizeInBytes() {
 	return Z2k<K>::SizeInBytes() * D;
