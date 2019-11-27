@@ -417,11 +417,17 @@ public:
 
     // Apply a function on this element as a raw buffer.
     //
-    // This function takes a function pointer as input and applies it to the raw
-    // underlying value.
-    void Apply(void (*f)(unsigned char *buf, size_t size)) {
+    // @param f the function to apply. This function is called with limbs, the
+    //        size of this element in bytes and arg1
+    // @param arg1 additional argument that is passed to f. Can be used to
+    //        circumvent issues related to captures.
+    void Apply(void (*f)(unsigned char*, size_t, void*), void *arg1) {
+	f((unsigned char *)limbs, SizeInBytes(), arg1);
+    };
+
+    void Apply(void (*f)(unsigned char*, size_t)) {
 	f((unsigned char *)limbs, SizeInBytes());
-    }
+    };
 
     // Computes a string representation of `this'.
     //
@@ -708,7 +714,12 @@ public:
     };
 
     // Apply f on each coefficient
-    void Apply(void (*f)(unsigned char *buf, size_t size)) {
+    void Apply(void (*f)(unsigned char*, size_t, void*), void *arg1) {
+	for (auto &c : coeff)
+	    c.Apply(f, arg1);
+    };
+
+    void Apply(void (*f)(unsigned char*, size_t)) {
 	for (auto &c : coeff)
 	    c.Apply(f);
     };
