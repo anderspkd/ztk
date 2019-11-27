@@ -640,6 +640,10 @@ public:
 	return K * D;
     };
 
+    static constexpr size_t Degree() {
+	return D;
+    };
+
     // Size of element in bytes
     static constexpr size_t SizeInBytes() {
 	return Z2k<K>::SizeInBytes() * D;
