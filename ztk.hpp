@@ -704,6 +704,13 @@ public:
 	return GR<K, D>{rcoeff};
     };
 
+    friend GR<K, D> operator-(const GR<K, D> &x) {
+	gr_coeff<K, D> rcoeff;
+	for (Size_t i = 0; i < D; i++)
+	    rcoeff[i] = -x.coeff[i];
+	return GR<K, D>{rcoeff};
+    };
+
     GR<K, D> operator-=(const GR<K, D> &x) {
 	for (size_t i = 0; i < D; i++)
 	    this->coeff[i] -= x.coeff[i];
