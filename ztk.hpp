@@ -749,6 +749,10 @@ public:
 	return coeff[idx];
     };
 
+    const Z2k<K>& operator[](const size_t idx) const {
+	return coeff[idx];
+    };
+
     bool operator==(const GR<K, D> &x) const {
     	bool b = true;
     	for (size_t i = 0; i < D; i++)
