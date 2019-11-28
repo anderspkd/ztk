@@ -657,15 +657,22 @@ public:
 	return Z2k<K>::SizeInBytes() * D;
     };
 
+    static const GR<K, D> Zero() {
+	static GR<K, D> zero {Z2k<K>::Zero};
+	return zero;
+    };
+
+    static const GR<K, D> One() {
+	static GR<K, D> one {Z2k<K>::One};
+	return one;
+    };
+
     constexpr GR() {};
-
-    GR(const gr_coeff<K, D> &coeff) : coeff{coeff} {};
-
-    GR(const GR<K, D> &x) : coeff{x.coeff} {};
-
-    GR(const Z2k<K> &x) {
+    constexpr GR(const Z2k<K> &x) {
 	coeff[0] = x;
     };
+    GR(const gr_coeff<K, D> &coeff) : coeff{coeff} {};
+    GR(const GR<K, D> &x) : coeff{x.coeff} {};
 
     Z2k<K> Project() const {
 	return this->coeff[0];
@@ -763,7 +770,10 @@ template<size_t K>
 class GR4 : public GR<K, 4> {
 public:
 
-    GR4() {};
+    constexpr GR4() {};
+    constexpr GR4(const Z2k<K> &x) {
+	this->coeff[0] = x;
+    };
     GR4(const gr_coeff<K, 4> &coeff) : GR<K, 4>{coeff} {};
     GR4(const GR<K, 4> &x) : GR<K, 4>{x} {};
 

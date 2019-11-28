@@ -562,3 +562,20 @@ TEST_CASE("apply gr") {
     for (auto &c : x.GetCoeff())
 	REQUIRE(c != Z2k<64>::Zero);
 }
+
+TEST_CASE("identities gr") {
+
+    auto x = random_gr<123, 5>();
+    auto zero = GR<123, 5>::Zero();
+
+    auto y = x + zero;
+
+    REQUIRE(y == x);
+
+    auto v = random_gr4<123>();
+    auto one = GR4<123>::One();
+
+    auto w = v * one;
+
+    REQUIRE(w == v);
+}
