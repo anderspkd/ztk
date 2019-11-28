@@ -667,6 +667,10 @@ public:
 	coeff[0] = x;
     };
 
+    Z2k<K> Project() const {
+	return this->coeff[0];
+    };
+
     GR<K, D>& operator=(const GR<K, D> &x) {
 	for (size_t i = 0; i < D; i++)
 	    this->coeff[i] = x.coeff[i];
