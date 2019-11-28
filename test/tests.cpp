@@ -31,11 +31,6 @@ GR<K, D> random_gr() {
     return GR<K, D>{coeff};
 }
 
-template<size_t K>
-GR4<K> random_gr4() {
-    return static_cast<GR4<K>>(random_gr<K, 4>());
-}
-
 TEST_CASE("constructors") {
     SECTION("0") {
 	Z2k<64> x64;
@@ -471,12 +466,12 @@ TEST_CASE("gr addition subtraction") {
 }
 
 TEST_CASE("invert") {
-    GR4<123> a = random_gr4<123>();
+    GR<123, 4> a = random_gr<123, 4>();
     while (!a.IsInvertible())
-	a = random_gr4<123>();
-    GR4<123> b = a;
+	a = random_gr<123, 4>();
+    GR<123, 4> b = a;
 
-    GR4<123> c = a / b;
+    GR<123, 4> c = a / b;
 
     REQUIRE(c.GetCoeff()[0] == Z2k<123>::One);
     REQUIRE(c.GetCoeff()[1] == Z2k<123>::Zero);
@@ -490,32 +485,32 @@ TEST_CASE("gr multiplication") {
     // {1,2,4,8} * {1,1,1,1} == {-13, -23, -13, 7};
 
     SECTION("64") {
-	GR4<64> a {{Z2k<64>{1}, Z2k<64>{2}, Z2k<64>{4}, Z2k<64>{8}}};
-	GR4<64> b {{Z2k<64>{1}, Z2k<64>{1}, Z2k<64>{1}, Z2k<64>{1}}};
+	GR<64, 4> a {{Z2k<64>{1}, Z2k<64>{2}, Z2k<64>{4}, Z2k<64>{8}}};
+	GR<64, 4> b {{Z2k<64>{1}, Z2k<64>{1}, Z2k<64>{1}, Z2k<64>{1}}};
 
 	auto c = a * b;
 
-	GR4<64> c_ {{-Z2k<64>{13}, -Z2k<64>{23}, -Z2k<64>{13}, Z2k<64>{7}}};
+	GR<64, 4> c_ {{-Z2k<64>{13}, -Z2k<64>{23}, -Z2k<64>{13}, Z2k<64>{7}}};
 	REQUIRE(c == c_);
     }
 
     SECTION("123") {
-	GR4<123> a {{Z2k<123>{1}, Z2k<123>{2}, Z2k<123>{4}, Z2k<123>{8}}};
-	GR4<123> b {{Z2k<123>{1}, Z2k<123>{1}, Z2k<123>{1}, Z2k<123>{1}}};
+	GR<123, 4> a {{Z2k<123>{1}, Z2k<123>{2}, Z2k<123>{4}, Z2k<123>{8}}};
+	GR<123, 4> b {{Z2k<123>{1}, Z2k<123>{1}, Z2k<123>{1}, Z2k<123>{1}}};
 
 	auto c = a * b;
 
-	GR4<123> c_ {{-Z2k<123>{13}, -Z2k<123>{23}, -Z2k<123>{13}, Z2k<123>{7}}};
+	GR<123, 4> c_ {{-Z2k<123>{13}, -Z2k<123>{23}, -Z2k<123>{13}, Z2k<123>{7}}};
 	REQUIRE(c == c_);
     }
 
     SECTION("128") {
-	GR4<128> a {{Z2k<128>{1}, Z2k<128>{2}, Z2k<128>{4}, Z2k<128>{8}}};
-	GR4<128> b {{Z2k<128>{1}, Z2k<128>{1}, Z2k<128>{1}, Z2k<128>{1}}};
+	GR<128, 4> a {{Z2k<128>{1}, Z2k<128>{2}, Z2k<128>{4}, Z2k<128>{8}}};
+	GR<128, 4> b {{Z2k<128>{1}, Z2k<128>{1}, Z2k<128>{1}, Z2k<128>{1}}};
 
 	auto c = a * b;
 
-	GR4<128> c_ {{-Z2k<128>{13}, -Z2k<128>{23}, -Z2k<128>{13}, Z2k<128>{7}}};
+	GR<128, 4> c_ {{-Z2k<128>{13}, -Z2k<128>{23}, -Z2k<128>{13}, Z2k<128>{7}}};
 	REQUIRE(c == c_);
     }
 }
@@ -572,8 +567,8 @@ TEST_CASE("identities gr") {
 
     REQUIRE(y == x);
 
-    auto v = random_gr4<123>();
-    auto one = GR4<123>::One();
+    auto v = random_gr<123, 4>();
+    auto one = GR<123, 4>::One();
 
     auto w = v * one;
 

@@ -630,6 +630,10 @@ std::ostream& operator<<(std::ostream &os, const Z2k<K> &x) {
 template<size_t K, size_t D>
 using gr_coeff = std::array<Z2k<K>, D>;
 
+template<size_t K> static inline void gr_deg4_mul(gr_coeff<K, 4>&, const gr_coeff<K, 4>&, const gr_coeff<K, 4>&);
+template<size_t K> static inline void gr_deg4_inv(gr_coeff<K, 4>&, const gr_coeff<K, 4>&);
+template<size_t K> static inline Z2k<K> gr_deg4_den(const Z2k<K>&, const Z2k<K>&, const Z2k<K>&, const Z2k<K>&);
+
 template<size_t K, size_t D>
 class GR {
 public:
@@ -717,6 +721,30 @@ public:
 	return GR<K, D>{coeff};
     };
 
+    friend GR<K, D> operator*(const GR<K, D> &x, const GR<K, D> &y) {
+	gr_coeff<K, D> rcoeff;
+	if (D == 4) {
+	    gr_deg4_mul(rcoeff, x.coeff, y.coeff);
+	    return GR<K, D>{rcoeff};
+	}
+	throw std::runtime_error("multiplication of this degree not supported");
+    };
+
+    GR<K, D> Invert() const {
+	assert (this->IsInvertible());
+	gr_coeff<K, D> rcoeff;
+	if (D == 4) {
+	    gr_deg4_inv(rcoeff, this->coeff);
+	    return GR<K, D>{rcoeff};
+	}
+	throw std::runtime_error("inversion of this degree not supported");
+    };
+
+    friend GR<K, D> operator/(const GR<K, D> &x, const GR<K, D> &y) {
+	auto y_ = y.Invert();
+	return x * y_;
+    };
+
     bool operator==(const GR<K, D> &x) const {
     	bool b = true;
     	for (size_t i = 0; i < D; i++)
@@ -767,49 +795,30 @@ public:
 
 #endif
 
-protected:
+private:
 
     gr_coeff<K, D> coeff;
 
 };
 
 template<size_t K>
-class GR4 : public GR<K, 4> {
-public:
+static inline void gr_deg4_mul(gr_coeff<K, 4> &r, const gr_coeff<K, 4> &x, const gr_coeff<K, 4> &y) {
 
-    constexpr GR4() {};
-    constexpr GR4(const Z2k<K> &x) {
-	this->coeff[0] = x;
-    };
-    GR4(const gr_coeff<K, 4> &coeff) : GR<K, 4>{coeff} {};
-    GR4(const GR<K, 4> &x) : GR<K, 4>{x} {};
+    auto x0 = x[0]; auto x1 = x[1]; auto x2 = x[2]; auto x3 = x[3];
+    auto y0 = y[0]; auto y1 = y[1]; auto y2 = y[2]; auto y3 = y[3];
 
-    friend GR4<K> operator*(const GR4<K> &x, const GR4<K> &y) {
+    r[0] = x0*y0 - x3*y1 - x2*y2 - x1*y3;
+    r[1] = x1*y0 + x0*y1 - x3*(y1 + y2) - x2*y2 - x2*y3 - x1*y3;
+    r[2] = x2*y0 - x2*y3 + x1*y1 + y2*(x0 - x3) - x3*y3;
+    r[3] = x3*y0 + x2*y1 + x1*y2 + x0*y3 - x3*y3;
+}
 
-    	const auto v = x.coeff;
-    	const auto u = y.coeff;
+template<size_t K>
+static inline void gr_deg4_inv(gr_coeff<K, 4> &r, const gr_coeff<K, 4> &x) {
+	const auto v0 = x[0]; const auto v1 = x[1];
+	const auto v2 = x[2]; const auto v3 = x[3];
 
-    	auto v0 = v[0]; auto v1 = v[1]; auto v2 = v[2]; auto v3 = v[3];
-    	auto u0 = u[0]; auto u1 = u[1]; auto u2 = u[2]; auto u3 = u[3];
-
-    	gr_coeff<K, 4> r;
-
-    	r[0] = v0*u0 - v3*u1 - v2*u2 - v1*u3;
-    	r[1] = v1*u0 + v0*u1 - v3*(u1 + u2) - v2*u2 - v2*u3 - v1*u3;
-    	r[2] = v2*u0 - v2*u3 + v1*u1 + u2*(v0 - v3) - v3*u3;
-    	r[3] = v3*u0 + v2*u1 + v1*u2 + v0*u3 - v3*u3;
-
-    	return GR4<K>{r};
-    };
-
-    GR4<K> Invert() const {
-	assert (this->IsInvertible());
-    	gr_coeff<K, 4> r;
-
-	const auto v0 = this->coeff[0]; const auto v1 = this->coeff[1];
-	const auto v2 = this->coeff[2]; const auto v3 = this->coeff[3];
-
-	auto d = Denom().Invert();
+	auto d = gr_deg4_den(v0, v1, v2, v3).Invert();
 
 	r[0] = (v0*v0*v0 - v1*v1*v1 + Z2k<K>::Three*v0*v1*v2 - v1*v1*v2 + v0*v2*v2
 		+ v2*v2*v2 - Z2k<K>::Three*v0*v0*v3 + Z2k<K>::Two*v0*v1*v3
@@ -822,29 +831,17 @@ public:
 
 	r[3] = (-d)*(v1*v1*v1 - Z2k<K>::Two*v0*v1*v2 - v2*v2*v2 - v2*v2*v3
 		     + (v0 - v3)*(v0-v3)*v3 + v1*v3*(Z2k<K>::Three*v2 + v3));
+}
 
-	return GR4<K>{r};
-    };
-
-    friend GR4<K> operator/(const GR4<K> &x, const GR4<K> &y) {
-	auto y_ = y.Invert();
-	return x * y_;
-    };
-
-private:
-
-    Z2k<K> Denom() const {
-	const auto v0 = this->coeff[0]; const auto v1 = this->coeff[1];
-	const auto v2 = this->coeff[2]; const auto v3 = this->coeff[3];
-
-	return v0*v0*v0*v0 + v1*v1*v1*v1 - v1*v2*v2*v2 + v2*v2*v2*v2
-	    - Z2k<K>::Three*v0*v0*v0*v3 + v1*(Z2k<K>::Three*v1 - Z2k<K>::Four*v2)*v2*v3
-	    + Z2k<K>::Two*v1*v1*v3*v3 + (v1 - v2)*v3*v3*v3 + v3*v3*v3*v3
-	    + v0*v0*(Z2k<K>::Three*v1*v2 + Z2k<K>::Two*v2*v2 + Z2k<K>::Four*v1*v3 + Z2k<K>::Three*v3*v3)
-	    - v0*(v1*v1*v1 + Z2k<K>::Four*v1*v1*v2 - v2*v2*v2 + (Z2k<K>::Three*v1 - v2)*v2*v3
-		  + (Z2k<K>::Five*v1 - Z2k<K>::Four*v2)*v3*v3 + v3*v3*v3);
-    };
-};
+template<size_t K>
+static inline Z2k<K> gr_deg4_den(const Z2k<K> &v0, const Z2k<K> &v1, const Z2k<K> &v2, const Z2k<K> &v3) {
+    return v0*v0*v0*v0 + v1*v1*v1*v1 - v1*v2*v2*v2 + v2*v2*v2*v2
+	- Z2k<K>::Three*v0*v0*v0*v3 + v1*(Z2k<K>::Three*v1 - Z2k<K>::Four*v2)*v2*v3
+	+ Z2k<K>::Two*v1*v1*v3*v3 + (v1 - v2)*v3*v3*v3 + v3*v3*v3*v3
+	+ v0*v0*(Z2k<K>::Three*v1*v2 + Z2k<K>::Two*v2*v2 + Z2k<K>::Four*v1*v3 + Z2k<K>::Three*v3*v3)
+	- v0*(v1*v1*v1 + Z2k<K>::Four*v1*v1*v2 - v2*v2*v2 + (Z2k<K>::Three*v1 - v2)*v2*v3
+	      + (Z2k<K>::Five*v1 - Z2k<K>::Four*v2)*v3*v3 + v3*v3*v3);
+}
 
 template<size_t K, size_t D>
 std::string GR<K, D>::ToString() const {
