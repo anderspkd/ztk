@@ -745,6 +745,10 @@ public:
 	return x * y_;
     };
 
+    Z2k<K>& operator[](const size_t idx) {
+	return coeff[idx];
+    };
+
     bool operator==(const GR<K, D> &x) const {
     	bool b = true;
     	for (size_t i = 0; i < D; i++)
@@ -786,14 +790,6 @@ public:
 
     template<size_t L, size_t H>
     friend std::ostream& operator<<(std::ostream &os, const GR<K, D> &x);
-
-#ifdef TESTING
-
-    const gr_coeff<K, D> GetCoeff() const {
-	return this->coeff;
-    };
-
-#endif
 
 private:
 
