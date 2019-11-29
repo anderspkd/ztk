@@ -678,6 +678,14 @@ public:
     GR(const gr_coeff<K, D> &coeff) : coeff{coeff} {};
     GR(const GR<K, D> &x) : coeff{x.coeff} {};
 
+    GR(const unsigned char *buf) {
+	size_t offset = 0;
+	for (size_t i = 0; i < D; i++) {
+	    coeff[i] = Z2k<K>{buf + offset};
+	    offset += Z2k<K>::SizeInBytes();
+	}
+    }
+
     Z2k<K> Project() const {
 	return this->coeff[0];
     };
@@ -772,7 +780,7 @@ public:
     };
 
     void Pack(unsigned char *buf) const {
-	auto p = buf;
+	unsigned char *p = buf;
 	for (size_t i = 0; i < D; i++) {
 	    coeff[i].Pack(p);
 	    p += Z2k<K>::SizeInBytes();
