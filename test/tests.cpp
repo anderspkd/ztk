@@ -17,7 +17,7 @@ void randomize(T* x, size_t n) {
 
 template<size_t K>
 Z2k<K> random_Z2k() {
-    auto size = Z2k<K>::SizeInLimbs();
+    auto size = Z2k<K>::size();
     limb_t e[size];
     randomize<limb_t>(e, size);
     return Z2k<K>{e};
@@ -38,29 +38,29 @@ TEST_CASE("constructors") {
 	Z2k<123> x123;
 	Z2k<128> x128;
 
-	REQUIRE(x64.GetLimbs()[0] == 0);
-	REQUIRE(x32.GetLimbs()[0] == 0);
-	REQUIRE(x123.GetLimbs()[0] == 0);
-	REQUIRE(x123.GetLimbs()[1] == 0);
-	REQUIRE(x128.GetLimbs()[0] == 0);
-	REQUIRE(x128.GetLimbs()[1] == 0);
+	REQUIRE(x64.limbs()[0] == 0);
+	REQUIRE(x32.limbs()[0] == 0);
+	REQUIRE(x123.limbs()[0] == 0);
+	REQUIRE(x123.limbs()[1] == 0);
+	REQUIRE(x128.limbs()[0] == 0);
+	REQUIRE(x128.limbs()[1] == 0);
     }
 
     SECTION("from limb_t* and mask") {
 	limb_t e[1] = {123456};
-	Z2k<64> x {e, Z2k<64>::GetMask()};
-	REQUIRE(x.GetLimbs()[0] == 123456);
+	Z2k<64> x {e, Z2k<64>::mask()};
+	REQUIRE(x.limbs()[0] == 123456);
 
 	limb_t r[2] = {123456, 345671};
-	Z2k<65> y {r, Z2k<65>::GetMask()};
-	REQUIRE(y.GetLimbs()[0] == 123456);
-	REQUIRE(y.GetLimbs()[1] == 1);
+	Z2k<65> y {r, Z2k<65>::mask()};
+	REQUIRE(y.limbs()[0] == 123456);
+	REQUIRE(y.limbs()[1] == 1);
     }
 
     SECTION("from limb_t and mask") {
 	limb_t e = 1231231;
-	Z2k<64> x {e, Z2k<64>::GetMask()};
-	REQUIRE(x.GetLimbs()[0] == e);
+	Z2k<64> x {e, Z2k<64>::mask()};
+	REQUIRE(x.limbs()[0] == e);
     }
 
     SECTION("from limb_t") {
@@ -68,15 +68,15 @@ TEST_CASE("constructors") {
 	randomize<limb_t>(&e, 1);
 	REQUIRE(e != 0);  // sanity check
 	Z2k<64> x {e};
-	REQUIRE(x.GetLimbs()[0] == e);
+	REQUIRE(x.limbs()[0] == e);
 
 	Z2k<32> y {e};
 	// Shouldn't be the same as limb_t is 64 bits and y is only 32
-	REQUIRE(y.NeedsMasking());
-	REQUIRE(y.GetLimbs()[0] != e);
-	REQUIRE(y.GetLimbs()[0] == (e & 0xFFFFFFFF));
-	REQUIRE(y.GetLimbs()[0] != (e & 0xFFFFFFFF00000000));
-	REQUIRE((y.GetLimbs()[0] & 0xFFFFFFFF00000000) == 0);
+	REQUIRE(y.needs_masking());
+	REQUIRE(y.limbs()[0] != e);
+	REQUIRE(y.limbs()[0] == (e & 0xFFFFFFFF));
+	REQUIRE(y.limbs()[0] != (e & 0xFFFFFFFF00000000));
+	REQUIRE((y.limbs()[0] & 0xFFFFFFFF00000000) == 0);
     }
 
     SECTION("from limb_t*") {
@@ -85,7 +85,7 @@ TEST_CASE("constructors") {
 	REQUIRE(e[0] != 0);
 	Z2k<64> x {e};
 
-	REQUIRE(x.GetLimbs()[0] == e[0]);
+	REQUIRE(x.limbs()[0] == e[0]);
 
 	limb_t f[2];
 	randomize<limb_t>(f, 2);
@@ -93,14 +93,14 @@ TEST_CASE("constructors") {
 	REQUIRE(f[1] != 0);
 
 	Z2k<128> y {f};
-	REQUIRE(y.GetLimbs()[0] == f[0]);
-	REQUIRE(y.GetLimbs()[1] == f[1]);
+	REQUIRE(y.limbs()[0] == f[0]);
+	REQUIRE(y.limbs()[1] == f[1]);
 
 	Z2k<96> w {f};
-	REQUIRE(w.GetLimbs()[0] == f[0]);
-	REQUIRE(w.GetLimbs()[1] == (f[1] & 0xFFFFFFFF));
-	REQUIRE(w.GetLimbs()[1] != (f[1] & 0xFFFFFFFF00000000));
-	REQUIRE((w.GetLimbs()[1] & 0xFFFFFFFF00000000) == 0);
+	REQUIRE(w.limbs()[0] == f[0]);
+	REQUIRE(w.limbs()[1] == (f[1] & 0xFFFFFFFF));
+	REQUIRE(w.limbs()[1] != (f[1] & 0xFFFFFFFF00000000));
+	REQUIRE((w.limbs()[1] & 0xFFFFFFFF00000000) == 0);
 
     }
 
@@ -112,8 +112,8 @@ TEST_CASE("constructors") {
 	Z2k<128> y {x};
 
 	REQUIRE(x == y);
-	REQUIRE(x.GetLimbs()[0] == y.GetLimbs()[0]);
-	REQUIRE(x.GetLimbs()[1] == y.GetLimbs()[1]);
+	REQUIRE(x.limbs()[0] == y.limbs()[0]);
+	REQUIRE(x.limbs()[1] == y.limbs()[1]);
     }
 
     SECTION("copy with diff modulus") {
@@ -124,9 +124,9 @@ TEST_CASE("constructors") {
 	Z2k<96> y {x};
 
 	REQUIRE(x != y);
-	REQUIRE(x.GetLimbs()[0] == y.GetLimbs()[0]);
-	REQUIRE(x.GetLimbs()[1] != y.GetLimbs()[1]);
-	REQUIRE((x.GetLimbs()[1] & 0xFFFFFFFF) == y.GetLimbs()[1]);
+	REQUIRE(x.limbs()[0] == y.limbs()[0]);
+	REQUIRE(x.limbs()[1] != y.limbs()[1]);
+	REQUIRE((x.limbs()[1] & 0xFFFFFFFF) == y.limbs()[1]);
     }
 
     SECTION("from a raw buffer") {
@@ -137,10 +137,10 @@ TEST_CASE("constructors") {
 
 	auto limb_buf = (limb_t *)buf;
 
-	REQUIRE(x.GetLimbs()[0] == limb_buf[0]);
-	REQUIRE(x.GetLimbs()[1] == limb_buf[1]);
-	REQUIRE(x.GetLimbs()[0] != 0);
-	REQUIRE(x.GetLimbs()[1] != 0);
+	REQUIRE(x.limbs()[0] == limb_buf[0]);
+	REQUIRE(x.limbs()[1] == limb_buf[1]);
+	REQUIRE(x.limbs()[0] != 0);
+	REQUIRE(x.limbs()[1] != 0);
     }
 
     // construction from a string is not currently supported
@@ -169,14 +169,14 @@ void test_addition() {
 
     auto c = a + b;
 
-    auto ln = Z2k<K>::SizeInLimbs();
+    auto ln = Z2k<K>::size();
     limb_t t[ln];
-    mpn_add_n(t, a.GetLimbs(), b.GetLimbs(), ln);
+    mpn_add_n(t, a.limbs(), b.limbs(), ln);
 
     for (size_t i = 0; i < ln - 1; i++)
-	REQUIRE(c.GetLimbs()[i] == t[i]);
+	REQUIRE(c.limbs()[i] == t[i]);
 
-    REQUIRE(c.GetLimbs()[ln-1] == (t[ln-1] & Z2k<K>::GetMask()));
+    REQUIRE(c.limbs()[ln-1] == (t[ln-1] & Z2k<K>::mask()));
 
     a += b;
 
@@ -212,20 +212,20 @@ void test_subtraction() {
     auto c0 = a - b;
     auto c1 = b - a;
 
-    auto ln = Z2k<K>::SizeInLimbs();
+    auto ln = Z2k<K>::size();
     limb_t t0[ln];
     limb_t t1[ln];
 
-    mpn_sub_n(t0, a.GetLimbs(), b.GetLimbs(), ln);
-    mpn_sub_n(t1, b.GetLimbs(), a.GetLimbs(), ln);
+    mpn_sub_n(t0, a.limbs(), b.limbs(), ln);
+    mpn_sub_n(t1, b.limbs(), a.limbs(), ln);
 
     for (size_t i = 0; i < ln - 1; i++) {
-	REQUIRE(c0.GetLimbs()[i] == t0[i]);
-	REQUIRE(c1.GetLimbs()[i] == t1[i]);
+	REQUIRE(c0.limbs()[i] == t0[i]);
+	REQUIRE(c1.limbs()[i] == t1[i]);
     }
 
-    REQUIRE(c0.GetLimbs()[ln-1] == (t0[ln-1] & Z2k<K>::GetMask()));
-    REQUIRE(c1.GetLimbs()[ln-1] == (t1[ln-1] & Z2k<K>::GetMask()));
+    REQUIRE(c0.limbs()[ln-1] == (t0[ln-1] & Z2k<K>::mask()));
+    REQUIRE(c1.limbs()[ln-1] == (t1[ln-1] & Z2k<K>::mask()));
 
     auto d = a;
 
@@ -264,15 +264,15 @@ void test_multiplication() {
 
     auto c = a * b;
 
-    auto ln = Z2k<K>::SizeInLimbs();
+    auto ln = Z2k<K>::size();
     limb_t t[ln * 2];
 
-    mpn_mul_n(t, a.GetLimbs(), b.GetLimbs(), ln);
+    mpn_mul_n(t, a.limbs(), b.limbs(), ln);
 
     for (size_t i = 0; i < ln - 1; i++)
-	REQUIRE(c.GetLimbs()[i] == t[i]);
+	REQUIRE(c.limbs()[i] == t[i]);
 
-    REQUIRE(c.GetLimbs()[ln-1] == (t[ln-1] & Z2k<K>::GetMask()));
+    REQUIRE(c.limbs()[ln-1] == (t[ln-1] & Z2k<K>::mask()));
 }
 
 TEST_CASE("multiplication") {
@@ -299,19 +299,19 @@ TEST_CASE("multiplication") {
 template<size_t K>
 void test_division() {
     auto a = random_Z2k<K>();
-    while (!a.IsInvertible())
+    while (!a.is_invertible())
 	a = random_Z2k<K>();
 
     auto b = a;
 
-    REQUIRE(a.IsInvertible());  // sanitiy check
+    REQUIRE(a.is_invertible());  // sanitiy check
 
-    for (size_t i = 0; i < Z2k<K>::SizeInLimbs(); i++)
-	REQUIRE(b.GetLimbs()[i] != 0);
+    for (size_t i = 0; i < Z2k<K>::size(); i++)
+	REQUIRE(b.limbs()[i] != 0);
 
     auto c = a / b;
 
-    REQUIRE(c == Z2k<K>::One);
+    REQUIRE(c == Z2k<K>::one);
 }
 
 TEST_CASE("division") {
@@ -353,18 +353,18 @@ TEST_CASE("equality") {
 
     limb_t x = 43;
     Z2k<32> a{x};
-    REQUIRE(a.IsOdd());
-    REQUIRE(a.IsInvertible());
+    REQUIRE(a.is_odd());
+    REQUIRE(a.is_invertible());
 
     limb_t y = 42;
     Z2k<32> b{y};
-    REQUIRE(b.IsEven());
+    REQUIRE(b.is_even());
 }
 
 TEST_CASE("packing/serialization") {
     auto a = random_Z2k<123>();
-    unsigned char buf[a.SizeInBytes()];
-    a.Pack(buf);
+    unsigned char buf[a.byte_size()];
+    a.pack(buf);
     Z2k<123> b{buf};
     REQUIRE(a == b);
 }
@@ -376,18 +376,18 @@ TEST_CASE("packing/serialization") {
 TEST_CASE("Constructors") {
     SECTION("0") {
 	GR<32, 4> x;
-	REQUIRE(x[0] == Z2k<32>::Zero);
-	REQUIRE(x[1] == Z2k<32>::Zero);
-	REQUIRE(x[2] == Z2k<32>::Zero);
-	REQUIRE(x[3] == Z2k<32>::Zero);
+	REQUIRE(x[0] == Z2k<32>::zero);
+	REQUIRE(x[1] == Z2k<32>::zero);
+	REQUIRE(x[2] == Z2k<32>::zero);
+	REQUIRE(x[3] == Z2k<32>::zero);
     }
     SECTION("from coefficients") {
-	gr_coeff<32, 4> a = {Z2k<32>::One, Z2k<32>::Two, Z2k<32>::Three, Z2k<32>::Four};
+	gr_coeff<32, 4> a = {Z2k<32>::one, Z2k<32>::two, Z2k<32>::three, Z2k<32>::four};
 	GR<32, 4> x {a};
-	REQUIRE(x[0] == Z2k<32>::One);
-	REQUIRE(x[1] == Z2k<32>::Two);
-	REQUIRE(x[2] == Z2k<32>::Three);
-	REQUIRE(x[3] == Z2k<32>::Four);
+	REQUIRE(x[0] == Z2k<32>::one);
+	REQUIRE(x[1] == Z2k<32>::two);
+	REQUIRE(x[2] == Z2k<32>::three);
+	REQUIRE(x[3] == Z2k<32>::four);
     }
     SECTION("from random coefficients") {
 	gr_coeff<64, 5> a;
@@ -410,13 +410,13 @@ TEST_CASE("Constructors") {
 	GR<64, 4> x (a);
 	GR<64, 4> y (b);
 	REQUIRE(x[0] == a);
-	REQUIRE(x[1] == Z2k<32>::Zero);
-	REQUIRE(x[2] == Z2k<32>::Zero);
-	REQUIRE(x[3] == Z2k<32>::Zero);
+	REQUIRE(x[1] == Z2k<32>::zero);
+	REQUIRE(x[2] == Z2k<32>::zero);
+	REQUIRE(x[3] == Z2k<32>::zero);
 	REQUIRE(y[0] == b);
-	REQUIRE(y[1] == Z2k<32>::Zero);
-	REQUIRE(y[2] == Z2k<32>::Zero);
-	REQUIRE(y[3] == Z2k<32>::Zero);
+	REQUIRE(y[1] == Z2k<32>::zero);
+	REQUIRE(y[2] == Z2k<32>::zero);
+	REQUIRE(y[3] == Z2k<32>::zero);
     }
 }
 
@@ -467,16 +467,16 @@ TEST_CASE("gr addition subtraction") {
 
 TEST_CASE("invert") {
     GR<123, 4> a = random_gr<123, 4>();
-    while (!a.IsInvertible())
+    while (!a.is_invertible())
 	a = random_gr<123, 4>();
     GR<123, 4> b = a;
 
     GR<123, 4> c = a / b;
 
-    REQUIRE(c[0] == Z2k<123>::One);
-    REQUIRE(c[1] == Z2k<123>::Zero);
-    REQUIRE(c[2] == Z2k<123>::Zero);
-    REQUIRE(c[3] == Z2k<123>::Zero);
+    REQUIRE(c[0] == Z2k<123>::one);
+    REQUIRE(c[1] == Z2k<123>::zero);
+    REQUIRE(c[2] == Z2k<123>::zero);
+    REQUIRE(c[3] == Z2k<123>::zero);
 }
 
 TEST_CASE("gr multiplication") {
@@ -518,25 +518,25 @@ TEST_CASE("gr multiplication") {
 TEST_CASE("apply ztk") {
     Z2k<64> x;
 
-    REQUIRE(x == Z2k<64>::Zero);
+    REQUIRE(x == Z2k<64>::zero);
 
     auto randomizer = [](unsigned char *buf, size_t size) {
 	randombytes_buf(buf, size);
     };
 
-    x.Apply(randomizer);
+    x.apply(randomizer);
 
-    REQUIRE(x != Z2k<64>::Zero);
+    REQUIRE(x != Z2k<64>::zero);
 
     Z2k<128> y;
 
-    REQUIRE(y == Z2k<128>::Zero);
+    REQUIRE(y == Z2k<128>::zero);
 
-    y.Apply(randomizer);
+    y.apply(randomizer);
 
-    REQUIRE(y != Z2k<128>::Zero);
+    REQUIRE(y != Z2k<128>::zero);
 
-    auto ylmbs = y.GetLimbs();
+    auto ylmbs = y.limbs();
     REQUIRE(ylmbs[0] != 0);
     REQUIRE(ylmbs[1] != 0);
 }
@@ -545,30 +545,30 @@ TEST_CASE("apply gr") {
 
     GR<64, 5> x;
 
-    for (size_t i = 0; i < x.Degree(); i++)
-	REQUIRE(x[i] == Z2k<64>::Zero);
+    for (size_t i = 0; i < x.degree(); i++)
+	REQUIRE(x[i] == Z2k<64>::zero);
 
     auto randomizer = [](unsigned char *buf, size_t size) {
 	randombytes_buf(buf, size);
     };
 
-    x.Apply(randomizer);
+    x.apply(randomizer);
 
-    for (size_t i = 0; i < x.Degree(); i++)
-	REQUIRE(x[i] != Z2k<64>::Zero);
+    for (size_t i = 0; i < x.degree(); i++)
+	REQUIRE(x[i] != Z2k<64>::zero);
 }
 
 TEST_CASE("identities gr") {
 
     auto x = random_gr<123, 5>();
-    auto zero = GR<123, 5>::Zero();
+    auto zero = GR<123, 5>::zero();
 
     auto y = x + zero;
 
     REQUIRE(y == x);
 
     auto v = random_gr<123, 4>();
-    auto one = GR<123, 4>::One();
+    auto one = GR<123, 4>::one();
 
     auto w = v * one;
 
