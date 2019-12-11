@@ -671,8 +671,8 @@ public:
     GR(const unsigned char *buf) {
 	size_t offset = 0;
 	for (size_t i = 0; i < D; i++) {
-	    coeff[i] = Z2k<K>{buf + offset};
-	    offset += Z2k<K>::SizeInBytes();
+	    _coeff[i] = Z2k<K>{buf + offset};
+	    offset += Z2k<K>::byte_size();
 	}
     };
 
@@ -693,10 +693,25 @@ public:
 	return GR<K, D>{rcoeff};
     };
 
+    friend GR<K, D> operator+(const GR<K, D> &x, const Z2k<K> &y) {
+	gr_coeff<K, D> rcoeff {x._coeff};
+	rcoeff[0] += y;
+	return GR<K, D>{rcoeff};
+    };
+
+    friend GR<K, D> operator+(const Z2k<K> &x, const GR<K, D> &y) {
+	return y + x;
+    };
+
     GR<K, D> operator+=(const GR<K, D> &x) {
 	for (size_t i = 0; i < D; i++)
 	    this->_coeff[i] += x._coeff[i];
-	return GR<K, D>{_coeff};
+	return *this;
+    };
+
+    GR<K, D> operator+=(const Z2k<K> &x) {
+	this->_coeff[0] += x;
+	return *this;
     };
 
     friend GR<K, D> operator-(const GR<K, D> &x, const GR<K, D> &y) {
@@ -716,7 +731,7 @@ public:
     GR<K, D> operator-=(const GR<K, D> &x) {
 	for (size_t i = 0; i < D; i++)
 	    this->_coeff[i] -= x._coeff[i];
-	return GR<K, D>{_coeff};
+	return *this;
     };
 
     friend GR<K, D> operator*(const GR<K, D> &x, const GR<K, D> &y) {
@@ -726,6 +741,17 @@ public:
 	    return GR<K, D>{rcoeff};
 	}
 	throw std::runtime_error("multiplication of this degree not supported");
+    };
+
+    friend GR<K, D> operator*(const GR<K, D> &x, const Z2k<K> &y) {
+	gr_coeff<K, D> rcoeff;
+	for (size_t i = 0; i < D; i++)
+	    rcoeff[i] = x._coeff[i] * y;
+	return GR<K, D>{rcoeff};
+    };
+
+    friend GR<K, D> operator*(const Z2k<K> &x, const GR<K, D> &y) {
+	return y * x;
     };
 
     GR<K, D> invert() const {
@@ -748,7 +774,7 @@ public:
     };
 
     const Z2k<K>& operator[](const size_t idx) const {
-	return coeff[idx];
+	return _coeff[idx];
     };
 
     bool operator==(const GR<K, D> &x) const {
