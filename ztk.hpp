@@ -37,6 +37,8 @@ typedef uint64_t limb_t;
 #define STORE_U128(r, x) do { (r)[0] = (limb_t)(x); (r)[1] = (limb_t)((x) >> 64); } while (0)
 #endif
 
+namespace {
+
 // To circumvent C++'s rule on partial specialization, we use these helper
 // functions for performing arithmetic, and provide specializations depending on
 // the number of limbs that an element uses.
@@ -46,6 +48,8 @@ template<std::size_t N> inline void op_inc(limb_t[N], const limb_t[N]);
 template<std::size_t N> inline void op_sub(limb_t[N], const limb_t[N], const limb_t[N]);
 template<std::size_t N> inline void op_dec(limb_t[N], const limb_t[N]);
 template<std::size_t N> inline void op_mul(limb_t[N], const limb_t[N], const limb_t[N]);
+
+}
 
 // A Z/Z_2^K element is templated by its bit-length K.
 template<std::size_t K>
@@ -468,6 +472,8 @@ template<std::size_t K> const Z2k<K> Z2k<K>::three;
 template<std::size_t K> const Z2k<K> Z2k<K>::four;
 template<std::size_t K> const Z2k<K> Z2k<K>::five;
 
+namespace {
+
 template<>
 inline void mask_if<true>(limb_t &r, const limb_t mask) {
     r &= mask;
@@ -597,6 +603,8 @@ inline void op_mul<2>(limb_t r[2], const limb_t x[2], const limb_t y[2]) {
 #endif
 }
 
+}
+
 template<std::size_t K>
 std::string Z2k<K>::to_string() const {
     std::string s = "{";
@@ -622,9 +630,13 @@ std::ostream& operator<<(std::ostream &os, const Z2k<K> &x) {
 template<std::size_t K, std::size_t D>
 using gr_coeff = std::array<Z2k<K>, D>;
 
+namespace {
+
 template<std::size_t K> static inline void gr_deg4_mul(gr_coeff<K, 4>&, const gr_coeff<K, 4>&, const gr_coeff<K, 4>&);
 template<std::size_t K> static inline void gr_deg4_inv(gr_coeff<K, 4>&, const gr_coeff<K, 4>&);
 template<std::size_t K> static inline Z2k<K> gr_deg4_den(const Z2k<K>&, const Z2k<K>&, const Z2k<K>&, const Z2k<K>&);
+
+}
 
 template<std::size_t K, std::size_t D>
 class GR {
@@ -931,8 +943,10 @@ private:
 
 };
 
+namespace {
+
 template<std::size_t K>
-static inline void gr_deg4_mul(gr_coeff<K, 4> &r, const gr_coeff<K, 4> &x, const gr_coeff<K, 4> &y) {
+inline void gr_deg4_mul(gr_coeff<K, 4> &r, const gr_coeff<K, 4> &x, const gr_coeff<K, 4> &y) {
 
     auto x0 = x[0]; auto x1 = x[1]; auto x2 = x[2]; auto x3 = x[3];
     auto y0 = y[0]; auto y1 = y[1]; auto y2 = y[2]; auto y3 = y[3];
@@ -944,7 +958,7 @@ static inline void gr_deg4_mul(gr_coeff<K, 4> &r, const gr_coeff<K, 4> &x, const
 }
 
 template<std::size_t K>
-static inline void gr_deg4_inv(gr_coeff<K, 4> &r, const gr_coeff<K, 4> &x) {
+inline void gr_deg4_inv(gr_coeff<K, 4> &r, const gr_coeff<K, 4> &x) {
 	const auto v0 = x[0]; const auto v1 = x[1];
 	const auto v2 = x[2]; const auto v3 = x[3];
 
@@ -964,13 +978,15 @@ static inline void gr_deg4_inv(gr_coeff<K, 4> &r, const gr_coeff<K, 4> &x) {
 }
 
 template<std::size_t K>
-static inline Z2k<K> gr_deg4_den(const Z2k<K> &v0, const Z2k<K> &v1, const Z2k<K> &v2, const Z2k<K> &v3) {
+inline Z2k<K> gr_deg4_den(const Z2k<K> &v0, const Z2k<K> &v1, const Z2k<K> &v2, const Z2k<K> &v3) {
     return v0*v0*v0*v0 + v1*v1*v1*v1 - v1*v2*v2*v2 + v2*v2*v2*v2
 	- Z2k<K>::three*v0*v0*v0*v3 + v1*(Z2k<K>::three*v1 - Z2k<K>::four*v2)*v2*v3
 	+ Z2k<K>::two*v1*v1*v3*v3 + (v1 - v2)*v3*v3*v3 + v3*v3*v3*v3
 	+ v0*v0*(Z2k<K>::three*v1*v2 + Z2k<K>::two*v2*v2 + Z2k<K>::four*v1*v3 + Z2k<K>::three*v3*v3)
 	- v0*(v1*v1*v1 + Z2k<K>::four*v1*v1*v2 - v2*v2*v2 + (Z2k<K>::three*v1 - v2)*v2*v3
 	      + (Z2k<K>::five*v1 - Z2k<K>::four*v2)*v3*v3 + v3*v3*v3);
+}
+
 }
 
 template<std::size_t K, std::size_t D>
