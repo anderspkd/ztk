@@ -41,18 +41,18 @@ typedef uint64_t limb_t;
 // functions for performing arithmetic, and provide specializations depending on
 // the number of limbs that an element uses.
 template<bool B> inline void mask_if(limb_t&, const limb_t);
-template<size_t N> inline void op_add(limb_t[N], const limb_t[N], const limb_t[N]);
-template<size_t N> inline void op_inc(limb_t[N], const limb_t[N]);
-template<size_t N> inline void op_sub(limb_t[N], const limb_t[N], const limb_t[N]);
-template<size_t N> inline void op_dec(limb_t[N], const limb_t[N]);
-template<size_t N> inline void op_mul(limb_t[N], const limb_t[N], const limb_t[N]);
+template<std::size_t N> inline void op_add(limb_t[N], const limb_t[N], const limb_t[N]);
+template<std::size_t N> inline void op_inc(limb_t[N], const limb_t[N]);
+template<std::size_t N> inline void op_sub(limb_t[N], const limb_t[N], const limb_t[N]);
+template<std::size_t N> inline void op_dec(limb_t[N], const limb_t[N]);
+template<std::size_t N> inline void op_mul(limb_t[N], const limb_t[N], const limb_t[N]);
 
 // A Z/Z_2^K element is templated by its bit-length K.
-template<size_t K>
+template<std::size_t K>
 class Z2k {
 public:
 
-    template<size_t L>
+    template<std::size_t L>
     friend class Z2k;
 
     // Constants that show up in various places.
@@ -66,7 +66,7 @@ public:
     // Element size in bits.
     //
     // @return size in bits (i.e., the template parameter).
-    static constexpr size_t bit_size() {
+    static constexpr std::size_t bit_size() {
 	return K;
     };
 
@@ -75,14 +75,14 @@ public:
     // The return value is the closest multiple of 8 that fits K bits.
     //
     // @return size of element in bytes.
-    static constexpr size_t byte_size() {
+    static constexpr std::size_t byte_size() {
 	return _byte_size;
     };
 
     // Element size in limbs.
     //
     // @return closest multiple of sizeof(limb_t) that fits K bits.
-    static constexpr size_t size() {
+    static constexpr std::size_t size() {
 	return _number_of_limbs;
     };
 
@@ -133,7 +133,7 @@ public:
     // @param limbs an array of limbs
     // @param mask mask to be applied to the last element of `limbs'.
     constexpr Z2k(const limb_t limbs[size()], const limb_t mask) {
-	for (size_t i = 0; i < size(); i++)
+	for (std::size_t i = 0; i < size(); i++)
 	    this->_limbs[i] = limbs[i];
 	this->_limbs[size()-1] &= mask;
     };
@@ -158,7 +158,7 @@ public:
     //
     // @param limbs array of limbs
     Z2k(const limb_t limbs[size()]) {
-	for (size_t i = 0; i < size(); i++)
+	for (std::size_t i = 0; i < size(); i++)
 	    this->_limbs[i] = limbs[i];
 	mask_if<needs_masking()>(this->_limbs[size()-1], _mask);
     };
@@ -179,7 +179,7 @@ public:
     // identical.
     //
     // @param other a Z2k element with L bits.
-    template<size_t L>
+    template<std::size_t L>
     Z2k(const Z2k<L> &other) {
 	const auto nbytes = L > K ? byte_size() : other.byte_size();
 	memcpy(this->_limbs, other._limbs, nbytes);
@@ -195,7 +195,7 @@ public:
 	: Z2k{(const limb_t *)buf} {};
 
     // TODO(not implemented)
-    template<size_t B>
+    template<std::size_t B>
     Z2k(const std::string &str);
 
     // Assignment.
@@ -207,7 +207,7 @@ public:
     // @return reference to `this' with the value of `x'.
     Z2k<K>& operator=(const Z2k<K> &x) {
 	// memcpy(this->limbs, x.limbs, SizeInBytes());
-	for (size_t i = 0; i < size(); i++)
+	for (std::size_t i = 0; i < size(); i++)
 	    this->_limbs[i] = x._limbs[i];
 	return *this;
     };
@@ -312,7 +312,7 @@ public:
     // @return true if `this' represents the same value as `x'.
     bool operator==(const Z2k<K> &x) const {
 	limb_t m = 0;
-	for (size_t i = 0; i < this->size(); i++) {
+	for (std::size_t i = 0; i < this->size(); i++) {
 	    m |= _limbs[i] ^ x._limbs[i];
 	}
 	return m == 0;
@@ -387,9 +387,9 @@ public:
 
     // Division.
     //
-    // Computes `x / y = x * y^-1 = 1 mod 2^K'. Notice y must be invertible for
-    // this operation to be well defined. If `y.IsInvertible()' returns false,
-    // this funcation fails with an assertion error.
+    // Computes `x / y = x * y^-1 mod 2^K'. Notice y must be invertible for this
+    // operation to be well defined. If `y.is_invertible()' returns false, this
+    // funcation fails with an assertion error.
     //
     // @param x, y K-bit Z2k objects
     //
@@ -411,11 +411,11 @@ public:
     //        size of this element in bytes and arg1
     // @param arg1 additional argument that is passed to f. Can be used to
     //        circumvent issues related to captures.
-    void apply(void (*f)(unsigned char*, size_t, void*), void *arg1) {
+    void apply(void (*f)(unsigned char*, std::size_t, void*), void *arg1) {
 	f((unsigned char *)_limbs, byte_size(), arg1);
     };
 
-    void apply(void (*f)(unsigned char*, size_t)) {
+    void apply(void (*f)(unsigned char*, std::size_t)) {
 	f((unsigned char *)_limbs, byte_size());
     };
 
@@ -434,7 +434,7 @@ public:
     //
     // @param os an output stream
     // @param x an L-bit Z2k object.
-    template<size_t L>
+    template<std::size_t L>
     friend std::ostream& operator<<(std::ostream &os, const Z2k<L> &x);
 
 #ifdef TESTING
@@ -449,22 +449,24 @@ public:
 
 private:
 
-    static constexpr size_t _byte_size = (K + 7) / 8;
-    static constexpr size_t _limb_size = sizeof(limb_t);
-    static constexpr size_t _limb_size_bits = _limb_size * 8;
-    static constexpr size_t _number_of_limbs = (_byte_size + (_limb_size - 1)) / _limb_size;
+    static constexpr std::size_t _byte_size       = (K + 7) / 8;
+    static constexpr std::size_t _limb_size       = sizeof(limb_t);
+    static constexpr std::size_t _limb_size_bits  = _limb_size * 8;
+    static constexpr std::size_t _number_of_limbs =
+        (_byte_size + (_limb_size - 1)) / _limb_size;
+
     static constexpr limb_t _mask =
-	uint64_t(-1LL) >> (_limb_size_bits - 1 - (K - 1) % _limb_size_bits);
+	limb_t(-1LL) >> (_limb_size_bits - 1 - (K - 1) % _limb_size_bits);
 
     limb_t _limbs[_number_of_limbs] = {0};
 };
 
-template<size_t K> const Z2k<K> Z2k<K>::zero;
-template<size_t K> const Z2k<K> Z2k<K>::one;
-template<size_t K> const Z2k<K> Z2k<K>::two;
-template<size_t K> const Z2k<K> Z2k<K>::three;
-template<size_t K> const Z2k<K> Z2k<K>::four;
-template<size_t K> const Z2k<K> Z2k<K>::five;
+template<std::size_t K> const Z2k<K> Z2k<K>::zero;
+template<std::size_t K> const Z2k<K> Z2k<K>::one;
+template<std::size_t K> const Z2k<K> Z2k<K>::two;
+template<std::size_t K> const Z2k<K> Z2k<K>::three;
+template<std::size_t K> const Z2k<K> Z2k<K>::four;
+template<std::size_t K> const Z2k<K> Z2k<K>::five;
 
 template<>
 inline void mask_if<true>(limb_t &r, const limb_t mask) {
@@ -595,16 +597,16 @@ inline void op_mul<2>(limb_t r[2], const limb_t x[2], const limb_t y[2]) {
 #endif
 }
 
-template<size_t K>
+template<std::size_t K>
 std::string Z2k<K>::to_string() const {
     std::string s = "{";
-    for (size_t i = 0; i < size()-1; i++)
+    for (std::size_t i = 0; i < size()-1; i++)
 	s += std::to_string(_limbs[i]) + ", ";
     s += std::to_string(_limbs[size()-1]) + "}";
     return s;
 }
 
-template<size_t K>
+template<std::size_t K>
 std::ostream& operator<<(std::ostream &os, const Z2k<K> &x) {
     os << x.to_string();
     return os;
@@ -617,120 +619,224 @@ std::ostream& operator<<(std::ostream &os, const Z2k<K> &x) {
 ////////////////////////////////////////////////////////////////////////////////
 
 // A galois ring is represented as an array of Z2k elements
-template<size_t K, size_t D>
+template<std::size_t K, std::size_t D>
 using gr_coeff = std::array<Z2k<K>, D>;
 
-template<size_t K> static inline void gr_deg4_mul(gr_coeff<K, 4>&, const gr_coeff<K, 4>&, const gr_coeff<K, 4>&);
-template<size_t K> static inline void gr_deg4_inv(gr_coeff<K, 4>&, const gr_coeff<K, 4>&);
-template<size_t K> static inline Z2k<K> gr_deg4_den(const Z2k<K>&, const Z2k<K>&, const Z2k<K>&, const Z2k<K>&);
+template<std::size_t K> static inline void gr_deg4_mul(gr_coeff<K, 4>&, const gr_coeff<K, 4>&, const gr_coeff<K, 4>&);
+template<std::size_t K> static inline void gr_deg4_inv(gr_coeff<K, 4>&, const gr_coeff<K, 4>&);
+template<std::size_t K> static inline Z2k<K> gr_deg4_den(const Z2k<K>&, const Z2k<K>&, const Z2k<K>&, const Z2k<K>&);
 
-template<size_t K, size_t D>
+template<std::size_t K, std::size_t D>
 class GR {
 public:
 
-    // Since a GR element is essentially a vector of Z_2^K elements, the bit
-    // size is K*D.
-    static constexpr size_t bit_size() {
+    // GR element size in bits.
+    //
+    // @return element size in bits.
+    static constexpr std::size_t bit_size() {
 	return K * D;
     };
 
-    static constexpr size_t degree() {
+    // Degree of extension.
+    //
+    // @return degree of extension (template parameter D).
+    static constexpr std::size_t degree() {
 	return D;
     };
 
-    static constexpr size_t coeff_byte_size() {
+    // Coefficient size in bytes.
+    //
+    // @return byte size of a single Z/Z_2^K element.
+    static constexpr std::size_t coeff_byte_size() {
 	return Z2k<K>::byte_size();
     };
 
-    static constexpr size_t coeff_bit_size() {
+    // Coefficient size in bits.
+    //
+    // @return size of coefficienct in bits (template parameter K).
+    static constexpr std::size_t coeff_bit_size() {
 	return K;
     };
 
-    // Size of element in bytes
-    static constexpr size_t byte_size() {
+    // Size of element in bytes.
+    //
+    // @return Size of an element in bytes.
+    static constexpr std::size_t byte_size() {
 	return Z2k<K>::byte_size() * D;
     };
 
+    // Zero element.
+    //
+    // @return additive identity in GR(2^K, D).
     static const GR<K, D> zero() {
 	static GR<K, D> zero {Z2k<K>::zero};
 	return zero;
     };
 
+    // One element.
+    //
+    // @return multiplicative identity in GR(2^K, D).
     static const GR<K, D> one() {
 	static GR<K, D> one {Z2k<K>::one};
 	return one;
     };
 
+    // Default constructor.
+    //
+    // Constructs an element with all 0 coefficients.
     constexpr GR() {};
-    constexpr GR(const Z2k<K> &x) {
-	_coeff[0] = x;
-    };
-    GR(const gr_coeff<K, D> &coeff) : _coeff{coeff} {};
-    GR(const GR<K, D> &x) : _coeff{x._coeff} {};
 
+    // Constructor from Z/Z_2^K element.
+    //
+    // Construct the constant polynomial P(X) = c.
+    //
+    // @param c a Z2k element of bit-length K.
+    constexpr GR(const Z2k<K> &c) {
+	_coeff[0] = c;
+    };
+
+    // Constructor from a set of coefficients.
+    //
+    // Constructs the polynomial
+    //   P(X) = coeff[0] + coeff[1].X + ... + coeff[D-1].X^{D-1}
+    //
+    // @param coeff an array of D Z2k<K> elements.
+    GR(const gr_coeff<K, D> &coeff)
+	: _coeff{coeff}
+	{};
+
+    // Copy constructor.
+    //
+    // @param x a GR element.
+    GR(const GR<K, D> &x)
+	: _coeff{x._coeff}
+	{};
+
+    // Constructor from a buffer.
+    //
+    // Use data pointed to by buf to construct a new GR element.
+    //
+    // @param buf, a pointer to byte_size() bytes which will be interpreted as
+    //        an array of Z2k<K> elements.
     GR(const unsigned char *buf) {
-	size_t offset = 0;
-	for (size_t i = 0; i < D; i++) {
+	std::size_t offset = 0;
+	for (std::size_t i = 0; i < D; i++) {
 	    _coeff[i] = Z2k<K>{buf + offset};
 	    offset += Z2k<K>::byte_size();
 	}
     };
 
+    // Project the current GR element to Z/Z_2^K.
+    //
+    // @return constant term of GR element.
     Z2k<K> project() const {
 	return this->_coeff[0];
     };
 
+    // Assignment operator
+    //
+    // @param x a GR element that this is assigned to.
+    //
+    // @return reference to this.
     GR<K, D>& operator=(const GR<K, D> &x) {
-	for (size_t i = 0; i < D; i++)
+	for (std::size_t i = 0; i < D; i++)
 	    this->_coeff[i] = x._coeff[i];
 	return *this;
     };
 
+    // Addition operator.
+    //
+    // @param x first summand.
+    // @param y second summand.
+    //
+    // @return x + y.
     friend GR<K, D> operator+(const GR<K, D> &x, const GR<K, D> &y) {
 	gr_coeff<K, D> rcoeff;
-	for (size_t i = 0; i < D; i++)
+	for (std::size_t i = 0; i < D; i++)
 	    rcoeff[i] = x._coeff[i] + y._coeff[i];
 	return GR<K, D>{rcoeff};
     };
 
-    friend GR<K, D> operator+(const GR<K, D> &x, const Z2k<K> &y) {
+    // Addition of a constant.
+    //
+    // Corresponds to adding x with the constant polynomial P(X) = c.
+    //
+    // @param x GR element
+    // @param c a Z/Z_2^K constant
+    //
+    // @return x + P(X) where P(X) = c. I.e., c is addded to the constant term
+    //         of x.
+    friend GR<K, D> operator+(const GR<K, D> &x, const Z2k<K> &c) {
 	gr_coeff<K, D> rcoeff {x._coeff};
-	rcoeff[0] += y;
+	rcoeff[0] += c;
 	return GR<K, D>{rcoeff};
     };
 
-    friend GR<K, D> operator+(const Z2k<K> &x, const GR<K, D> &y) {
-	return y + x;
+    // Addition of a constant.
+    //
+    // See above. (Addition commutes in GR(2^K, D).)
+    friend GR<K, D> operator+(const Z2k<K> &x, const GR<K, D> &c) {
+	return c + x;
     };
 
+    // Increment.
+    //
+    // Add x coefficient wise to this.
+    //
+    // @param x a GR element to increment this with.
+    //
+    // @return this incremented by x.
     GR<K, D> operator+=(const GR<K, D> &x) {
-	for (size_t i = 0; i < D; i++)
+	for (std::size_t i = 0; i < D; i++)
 	    this->_coeff[i] += x._coeff[i];
 	return *this;
     };
 
-    GR<K, D> operator+=(const Z2k<K> &x) {
-	this->_coeff[0] += x;
+    // Increment by constant.
+    //
+    // Adds c to the constant term of this.
+    //
+    // @param a Z/Z_2^K constant.
+    //
+    // @return this.
+    GR<K, D> operator+=(const Z2k<K> &c) {
+	this->_coeff[0] += c;
 	return *this;
     };
 
+    // Subtraction.
     friend GR<K, D> operator-(const GR<K, D> &x, const GR<K, D> &y) {
 	gr_coeff<K, D> rcoeff;
-	for (size_t i = 0; i < D; i++)
+	for (std::size_t i = 0; i < D; i++)
 	    rcoeff[i] = x._coeff[i] - y._coeff[i];
 	return GR<K, D>{rcoeff};
     };
 
+    friend GR<K, D> operator-(const GR<K, D> &x, const Z2k<K> &c) {
+	gr_coeff<K, D> rcoeff {x._coeff};
+	rcoeff[0] -= c;
+	return GR<K, D>{rcoeff};
+    };
+
+    friend GR<K, D> operator-(const Z2k<K> &c, const GR<K, D> &x) {
+	return -(x - c);
+    };
+
     friend GR<K, D> operator-(const GR<K, D> &x) {
 	gr_coeff<K, D> rcoeff;
-	for (size_t i = 0; i < D; i++)
+	for (std::size_t i = 0; i < D; i++)
 	    rcoeff[i] = -x._coeff[i];
 	return GR<K, D>{rcoeff};
     };
 
     GR<K, D> operator-=(const GR<K, D> &x) {
-	for (size_t i = 0; i < D; i++)
+	for (std::size_t i = 0; i < D; i++)
 	    this->_coeff[i] -= x._coeff[i];
+	return *this;
+    };
+
+    GR<K, D> operator-=(const Z2k<K> &c) {
+	this->_coeff[0] -= c;
 	return *this;
     };
 
@@ -745,7 +851,7 @@ public:
 
     friend GR<K, D> operator*(const GR<K, D> &x, const Z2k<K> &y) {
 	gr_coeff<K, D> rcoeff;
-	for (size_t i = 0; i < D; i++)
+	for (std::size_t i = 0; i < D; i++)
 	    rcoeff[i] = x._coeff[i] * y;
 	return GR<K, D>{rcoeff};
     };
@@ -769,17 +875,17 @@ public:
 	return x * y_;
     };
 
-    Z2k<K>& operator[](const size_t idx) {
+    Z2k<K>& operator[](const std::size_t idx) {
 	return _coeff[idx];
     };
 
-    const Z2k<K>& operator[](const size_t idx) const {
+    const Z2k<K>& operator[](const std::size_t idx) const {
 	return _coeff[idx];
     };
 
     bool operator==(const GR<K, D> &x) const {
     	bool b = true;
-    	for (size_t i = 0; i < D; i++)
+    	for (std::size_t i = 0; i < D; i++)
     	    b &= this->_coeff[i] == x._coeff[i];
     	return b;
     };
@@ -797,26 +903,26 @@ public:
 
     void pack(unsigned char *buf) const {
 	unsigned char *p = buf;
-	for (size_t i = 0; i < D; i++) {
+	for (std::size_t i = 0; i < D; i++) {
 	    _coeff[i].pack(p);
 	    p += Z2k<K>::byte_size();
 	}
     };
 
     // Apply f on each coefficient
-    void apply(void (*f)(unsigned char*, size_t, void*), void *arg1) {
+    void apply(void (*f)(unsigned char*, std::size_t, void*), void *arg1) {
 	for (auto &c : _coeff)
 	    c.apply(f, arg1);
     };
 
-    void apply(void (*f)(unsigned char*, size_t)) {
+    void apply(void (*f)(unsigned char*, std::size_t)) {
 	for (auto &c : _coeff)
 	    c.apply(f);
     };
 
     std::string to_string() const;
 
-    template<size_t L, size_t H>
+    template<std::size_t L, std::size_t H>
     friend std::ostream& operator<<(std::ostream &os, const GR<K, D> &x);
 
 private:
@@ -825,7 +931,7 @@ private:
 
 };
 
-template<size_t K>
+template<std::size_t K>
 static inline void gr_deg4_mul(gr_coeff<K, 4> &r, const gr_coeff<K, 4> &x, const gr_coeff<K, 4> &y) {
 
     auto x0 = x[0]; auto x1 = x[1]; auto x2 = x[2]; auto x3 = x[3];
@@ -837,7 +943,7 @@ static inline void gr_deg4_mul(gr_coeff<K, 4> &r, const gr_coeff<K, 4> &x, const
     r[3] = x3*y0 + x2*y1 + x1*y2 + x0*y3 - x3*y3;
 }
 
-template<size_t K>
+template<std::size_t K>
 static inline void gr_deg4_inv(gr_coeff<K, 4> &r, const gr_coeff<K, 4> &x) {
 	const auto v0 = x[0]; const auto v1 = x[1];
 	const auto v2 = x[2]; const auto v3 = x[3];
@@ -857,7 +963,7 @@ static inline void gr_deg4_inv(gr_coeff<K, 4> &r, const gr_coeff<K, 4> &x) {
 		     + (v0 - v3)*(v0-v3)*v3 + v1*v3*(Z2k<K>::three*v2 + v3));
 }
 
-template<size_t K>
+template<std::size_t K>
 static inline Z2k<K> gr_deg4_den(const Z2k<K> &v0, const Z2k<K> &v1, const Z2k<K> &v2, const Z2k<K> &v3) {
     return v0*v0*v0*v0 + v1*v1*v1*v1 - v1*v2*v2*v2 + v2*v2*v2*v2
 	- Z2k<K>::three*v0*v0*v0*v3 + v1*(Z2k<K>::three*v1 - Z2k<K>::four*v2)*v2*v3
@@ -867,17 +973,17 @@ static inline Z2k<K> gr_deg4_den(const Z2k<K> &v0, const Z2k<K> &v1, const Z2k<K
 	      + (Z2k<K>::five*v1 - Z2k<K>::four*v2)*v3*v3 + v3*v3*v3);
 }
 
-template<size_t K, size_t D>
+template<std::size_t K, std::size_t D>
 std::string GR<K, D>::to_string() const {
     std::stringstream ss;
     ss << "{";
-    for (size_t i = 0; i < D - 1; i++)
+    for (std::size_t i = 0; i < D - 1; i++)
 	ss << this->_coeff[i] << ", ";
     ss << this->_coeff[D - 1] << "}";
     return ss.str();
 }
 
-template<size_t K, size_t D>
+template<std::size_t K, std::size_t D>
 std::ostream& operator<<(std::ostream &os, const GR<K, D> &x) {
     os << x.to_string();
     return os;
