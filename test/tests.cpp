@@ -520,11 +520,7 @@ TEST_CASE("apply ztk") {
 
     REQUIRE(x == Z2k<64>::zero);
 
-    auto randomizer = [](unsigned char *buf, size_t size) {
-	randombytes_buf(buf, size);
-    };
-
-    x.apply(randomizer);
+    randombytes_buf(x.limbs(), x.byte_size());
 
     REQUIRE(x != Z2k<64>::zero);
 
@@ -532,7 +528,7 @@ TEST_CASE("apply ztk") {
 
     REQUIRE(y == Z2k<128>::zero);
 
-    y.apply(randomizer);
+    randombytes_buf(y.limbs(), y.byte_size());
 
     REQUIRE(y != Z2k<128>::zero);
 
@@ -548,11 +544,8 @@ TEST_CASE("apply gr") {
     for (size_t i = 0; i < x.degree(); i++)
 	REQUIRE(x[i] == Z2k<64>::zero);
 
-    auto randomizer = [](unsigned char *buf, size_t size) {
-	randombytes_buf(buf, size);
-    };
-
-    x.apply(randomizer);
+    for (size_t i = 0; i < x.degree(); i++)
+	randombytes_buf(x[i].limbs(), x.coeff_byte_size());
 
     for (size_t i = 0; i < x.degree(); i++)
 	REQUIRE(x[i] != Z2k<64>::zero);

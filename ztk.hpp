@@ -409,18 +409,9 @@ public:
 	memcpy(buf, this->_limbs, byte_size());
     };
 
-    // Apply a function on this element as a raw buffer.
-    //
-    // @param f the function to apply. This function is called with limbs, the
-    //        size of this element in bytes and arg1
-    // @param arg1 additional argument that is passed to f. Can be used to
-    //        circumvent issues related to captures.
-    void apply(void (*f)(unsigned char*, std::size_t, void*), void *arg1) {
-	f((unsigned char *)_limbs, byte_size(), arg1);
-    };
-
-    void apply(void (*f)(unsigned char*, std::size_t)) {
-	f((unsigned char *)_limbs, byte_size());
+    // Return a pointer to the internal representation of this element.
+    limb_t* limbs() {
+	return _limbs;
     };
 
     // Computes a string representation of `this'.
@@ -440,16 +431,6 @@ public:
     // @param x an L-bit Z2k object.
     template<std::size_t L>
     friend std::ostream& operator<<(std::ostream &os, const Z2k<L> &x);
-
-#ifdef TESTING
-
-    // For testing, it is helpful to be able to read each individual limb of
-    // `this'. Only exposed if compiled with -DTESTING.
-    const limb_t* limbs() const {
-	return _limbs;
-    };
-
-#endif
 
 private:
 
