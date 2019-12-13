@@ -520,7 +520,7 @@ TEST_CASE("apply ztk") {
 
     REQUIRE(x == Z2k<64>::zero);
 
-    randombytes_buf(x.limbs(), x.byte_size());
+    randombytes_buf(x.as_bytes(), x.byte_size());
 
     REQUIRE(x != Z2k<64>::zero);
 
@@ -528,7 +528,7 @@ TEST_CASE("apply ztk") {
 
     REQUIRE(y == Z2k<128>::zero);
 
-    randombytes_buf(y.limbs(), y.byte_size());
+    randombytes_buf(y.as_bytes(), y.byte_size());
 
     REQUIRE(y != Z2k<128>::zero);
 
@@ -545,7 +545,7 @@ TEST_CASE("apply gr") {
 	REQUIRE(x[i] == Z2k<64>::zero);
 
     for (size_t i = 0; i < x.degree(); i++)
-	randombytes_buf(x[i].limbs(), x.coeff_byte_size());
+	randombytes_buf(x[i].as_bytes(), x.coeff_byte_size());
 
     for (size_t i = 0; i < x.degree(); i++)
 	REQUIRE(x[i] != Z2k<64>::zero);
@@ -566,4 +566,14 @@ TEST_CASE("identities gr") {
     auto w = v * one;
 
     REQUIRE(w == v);
+}
+
+TEST_CASE("z2k construct int") {
+    int x = 42;
+    Z2k<64> xx {x};
+    REQUIRE(xx.limbs()[0] == x);
+
+    int y = -1;
+    Z2k<64> yy {y};
+    REQUIRE(yy.limbs()[0] == y);
 }

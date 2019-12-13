@@ -152,6 +152,13 @@ public:
 	mask_if<needs_masking()>(_limbs[0], _mask);
     };
 
+    // Constructor from regular int
+    //
+    // Will be masked
+    //
+    // @param x int
+    Z2k(const int x) : Z2k{(const limb_t)x} {};
+
     // Constructor for array of limbs.
     //
     // Constructs the element
@@ -409,10 +416,13 @@ public:
 	memcpy(buf, this->_limbs, byte_size());
     };
 
-    // Return a pointer to the internal representation of this element.
-    limb_t* limbs() {
-	return _limbs;
-    };
+    // Return a pointer to an internal representation of this element.
+    //
+    // The return of this function can be interpreted as a pointer to a sequence
+    // of bytes which define this element.
+    unsigned char* as_bytes() {
+	return (unsigned char *)_limbs;
+    }
 
     // Computes a string representation of `this'.
     //
@@ -431,6 +441,16 @@ public:
     // @param x an L-bit Z2k object.
     template<std::size_t L>
     friend std::ostream& operator<<(std::ostream &os, const Z2k<L> &x);
+
+#ifdef TESTING
+
+    // For testing, it is helpful to be able to read each individual limb of
+    // `this'. Only exposed if compiled with -DTESTING.
+    const limb_t* limbs() const {
+	return _limbs;
+    };
+
+#endif
 
 private:
 
@@ -900,17 +920,6 @@ public:
 	    _coeff[i].pack(p);
 	    p += Z2k<K>::byte_size();
 	}
-    };
-
-    // Apply f on each coefficient
-    void apply(void (*f)(unsigned char*, std::size_t, void*), void *arg1) {
-	for (auto &c : _coeff)
-	    c.apply(f, arg1);
-    };
-
-    void apply(void (*f)(unsigned char*, std::size_t)) {
-	for (auto &c : _coeff)
-	    c.apply(f);
     };
 
     std::string to_string() const;
