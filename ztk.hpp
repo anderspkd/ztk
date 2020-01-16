@@ -481,10 +481,7 @@ inline void mask_if<true>(limb_t &r, const limb_t mask) {
 }
 
 template<>
-inline void mask_if<false>(limb_t &r, const limb_t mask) {
-    (void)r;
-    (void)mask;
-}
+inline void mask_if<false>(limb_t&, const limb_t) { }
 
 template<>
 inline void op_add<1>(limb_t r[1], const limb_t x[1], const limb_t y[1]) {
