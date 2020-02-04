@@ -380,6 +380,8 @@ public:
 	// See https://marc-b-reynolds.github.io/math/2017/09/18/ModInverse.html
 	// z = 3*x ^ 2
 	const auto x = *this;
+	// TODO(do this)
+	// auto z = x * magic<3>;
 	auto z = x * Z2k<K>::three;
 	z._limbs[0] ^= 2;
 
